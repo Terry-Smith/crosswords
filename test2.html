@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width">
+	<style>
+
+		.hidden {
+			display: none;
+		}
+		
+		html {
+			background-color: #325891;
+			font-family: sans-serif;
+			font-size: 12pt;
+		}
+
+		body {
+			margin: 0px;
+			padding: 0px;
+/*			background-color: #FBFBFB;
+			height: calc(100vh - 3.5rem);*/
+			user-select: none;
+			/*overflow: hidden;*/
+		}
+
+		main {
+			flex: 1 1 auto;
+			overflow: hidden;
+		}
+
+		header, footer {
+			flex: 0 0 auto;
+		}
+		footer {
+			border-top-style: solid;
+			border-top-width: 1px;
+			border-top-color: lightgray;
+			padding: 0.5rem;
+			display: inline-grid;
+			grid-template-columns: repeat(10, 1fr);
+			font-size: 1.25rem;
+			background-color: white;
+			color: black;
+			cursor: default;
+			width: min-content;
+		}
+
+		.client-area {
+			display: flex;
+			height: 100%;
+			flex-direction: column;
+		}
+
+		.puzzle-header {
+			background-color: #5d5d5d;
+			color: white;
+			z-index: 1;
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			flex-wrap: nowrap;
+			justify-content: space-between;
+		}
+		
+		.puzzle-clue {
+			padding: 1rem;
+			padding-top: 1.5rem;
+			padding-bottom: 1.5rem;
+			max-height: 3rem;
+			flex-grow: 1;
+		}
+		
+		.puzzle-button {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 1.5rem;
+			color: white;
+			background-color: transparent;
+			border: none;
+			margin-left: .5rem;
+			margin-right: .5rem;
+			border-radius: 1.5rem;
+			height: 2rem;
+			width: 2rem;
+		}
+		
+		.puzzle-button:hover {
+			background-color: rgb(255 255 255 / 28%);
+		}
+
+		.puzzle-button:focus {
+			background-color: rgb(255 255 255 / 28%);
+		}
+		
+		@media (min-resolution: 150dpi) {
+			.puzzle-clue {
+				font-size: 1.25rem;
+			}
+		}
+
+		.puzzle-content {
+			padding: 0;
+			overflow: auto;
+			position: relative;
+		}
+		
+		.puzzle-grid {
+			display: inline-grid;
+			grid-template-columns: repeat(var(--puzzle-size), 1fr);
+			grid-column-gap: 1px;
+			grid-row-gap: 1px;
+			background-color: black;
+			border-style: solid;
+			border-width: 1px;
+		}
+
+		.puzzle-cell {
+			display: inline-grid;
+			font-size: 1.5rem;
+			width: 2rem;
+			height: 2rem;
+			color: black;
+			background-color: white;
+			padding: .1rem;
+			justify-content: center;
+			align-content: center;
+			user-select: none;
+		}
+
+		@media (min-resolution: 150dpi) {
+			.puzzle-cell {
+				font-size: 2.25rem;
+				width: 3.5rem;
+				height: 3.5rem;
+			}
+		}
+		
+		.puzzle-cell-sample {
+			font-size: 0.5rem;
+			width: 1rem;
+			height: 1rem;
+			border-style: solid;
+			border-width: 1px;
+		}
+
+		.puzzle-cell-current-clue {
+			background-color: #F3B169;
+		}
+
+		.puzzle-cell-current-clue[guess="wrong"] {
+			color: red;
+		}
+		
+		.puzzle-cell-block {
+			background-color: black;
+		}
+		
+		.puzzle-cell-focus {
+			background-color: #DD6A2A;
+		}
+
+		.puzzle-cell-focus[guess="wrong"] {
+			color: #FFFFFF;
+		}
+
+		.puzzle-cell:not(.puzzle-cell-current-clue)[guess="waswrong"] {
+			background-color: #FEDEDE;
+		}
+
+		.puzzle-cell:not(.puzzle-cell-current-clue)[guess="wrong"] {
+			background-color: red;
+		}
+		
+		.puzzle-cell::before {
+			content: attr(cluenumber);
+			display: inline-block;
+			font-size: .5rem;
+			position: absolute;
+			color: initial;
+		}
+
+		@media (min-resolution: 150dpi) {
+			.puzzle-cell::before {
+				font-size: 1rem;
+			}
+		}
+		
+		.puzzle-cell-sample:before {
+			font-size: 0.5rem;
+		}
+
+		.puzzle-keyboard-key {
+			display: inline-grid;
+			font-size: 1.75rem;
+			width: 2.2rem;
+			height: 3.1rem;
+			justify-content: center;
+			align-content: center;
+			user-select: none;
+			margin-bottom: 0.55rem;
+			margin-right: 0.3rem;
+			background-color: white;
+			border-radius: .5rem;
+		}
+
+/*		@media (min-resolution: 150dpi) {
+			.puzzle-keyboard-key {
+				font-size: 2.5rem;
+				width: 4rem;
+				height: 4rem;
+			}
+		}
+*/		
+		.puzzle-keyboard-key:hover {
+			outline: none;
+			box-shadow: inset 0 0 0 0.2rem rgba(38,143,255,.5);
+		}
+
+		.puzzle-keyboard-key[key-action="bs"] {
+			background-color: #d9d9d9;
+			width: 3rem;
+		}
+		
+		dialog {
+			padding: 1rem;
+			border-style: none;
+			border-radius: 1rem;
+			min-height: 10rem;
+			min-width: 15rem;
+			font-size: .90rem;
+			max-height: calc(100vh - 3rem);
+			max-width: calc(100vw - 3rem);
+			top: -12rem;
+			padding-top: .5rem;
+			box-shadow: 0 0 13px 0.25rem rgb(67 67 67 / 50%);
+		}
+
+		.dlg-title {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+		
+		.dlg-title h1 {
+			margin: 0;
+		}
+		
+		.close-btn {
+			border: none;
+			background-color: transparent;
+			font-size: 2.5rem;
+		}
+		
+		.dlg-row {
+			display: flex;
+			align-items: center;
+			padding-top: .5rem;
+			padding-bottom: .5rem;
+			flex-wrap: wrap;
+		}
+		
+		.dlg-row-space-between {
+			justify-content: space-between;
+		}
+
+		.dlg-row-justify-left {
+			justify-content: flex-start;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			align-content: flex-start;
+		}
+		
+		.dlg-row select {
+			margin-top: .25rem;
+		}
+		
+		.dlg-row-description {
+			font-size: 75%;
+			color: #615e5e;
+			letter-spacing: .02rem;
+			margin-top: .25rem;
+		}
+		
+		@media (min-resolution: 150dpi) {
+			.dlg-row {
+				font-size: 1.5rem;
+			}
+			.dlg-row-description {
+				font-size: 50%;
+			}
+			.dlg-row select {
+				font-size: 1.25rem;
+			}
+		}
+		
+		.checkbox-label {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+		}
+		
+		.checkbox-label > input {
+			margin-right: 0.5rem;
+		}
+
+	</style>
+
+	<script src="https://cdn.jsdelivr.net/npm/idb@8/build/umd.js"></script>
+	<script>
+		let crosswordsDb;
+		async function initCrosswordsDb() {
+			crosswordsDb = await idb.openDB("crosswords", 1, {
+				upgrade(db, oldVersion, newVersion, transaction, event) {
+					const settingsStore = db.createObjectStore("settings", { keyPath: "id" });
+					const puzzleStore = db.createObjectStore("puzzles", { keyPath: ["date", "source", "description"] });
+					const playedPuzzlesStore = db.createObjectStore("playedPuzzles", { keyPath: ["date", "source", "description"] });
+				},
+				blocked(currentVersion, blockedVersion, event) {
+					console.log("initCrosswordsDb - blocked");
+				},
+				blocking(currentVersion, blockedVersion, event) {
+					console.log("initCrosswordsDb - blocking");
+				},
+				terminated() {
+					console.log("initCrosswordsDb - terminated");
+				},
+			});
+		}
+		
+		async function saveSettings(co) {
+			await crosswordsDb.put("settings", co);
+		}
+		
+		async function saveState(ps) {
+			await crosswordsDb.put("playedPuzzles", ps);
+		}
+
+		async function getState(pd) {
+			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.description]);
+		}
+		
+		let defaultCrosswordOptions = {
+			id: "me",
+			showErrors: false,
+			skipFilledCells: false,
+			movementStyle: "stopAtEnd",
+			useNativeKeyboard: false,
+			puzzleScale: 1
+		};
+
+//		testPuzzleCellContent = "SUSHI#SAPS#OPALASHEN#PLIE#VERYWEIRDPRESCIENCEURIS#AIR#SLR###PIT#PINON#LAPEL#DECENT#CBSNEWS###HEF#AAA#DRED#THEPREFABFOUR#ASEA#ELL#YOU###SAMPLES#ABATED#PRILE#EPSOM#XED###ANT#USO#SCARVICTORPREMATUREERIE#EDEN#OASISTAGS#STET#KNEES";
+		let testPuzzleCellContent = "LURED#ASKS#CARPERODE#FLIT#ALOEISAAC#TIER#BELT#ARMOREDVEHICLE####RARE#SUN###AFLOAT##USE#WITBLOAT#FETE#DICEBUFFEREDASPIRINETAS#OATH#EVENSYET#FUR##ONEDGE###ION#ETNA####PADDEDENVELOPE#OBOE#OUTS#IRATEELLA#FREE#ZESTYTELL#FORT#ESTEE"
+		let testPuzzleDefinition = {
+			date: 1741563461393,
+			source: "Terry Store",
+			description: "Test crossword puzzle I copied from somewhere.",
+			author: "Author is unknown",
+			copyright: "© The author owns the copyright.",
+			size: 15,
+			cells: Array.from(testPuzzleCellContent),
+			clues: {
+				across: [],
+				down: []
+			}
+		};
+let across = [];
+across[1] = "Tempted";
+across[6] = "Makes an inquiry";
+across[10] = "Complain constantly";
+across[14] = "Wear away";
+across[15] = "Fly like a butterfly";
+across[16] = "Burn-soothing plant";
+across[17] = "Sir ___ Newton";
+across[18] = "Wedding cake layer";
+across[19] = "Slacks-loop insert";
+across[20] = "Military tank, for example";
+across[23] = "Seldom seen";
+across[24] = "It rises at dawn";
+across[25] = "On top of the water";
+across[29] = "Find a purpose for";
+across[30] = "Clever humor";
+across[33] = "Cause to swell up";
+across[34] = "Elaborate party";
+across[36] = "Board game cubes";
+across[37] = "Pain reliever with an antacid coating";
+across[40] = "When planes are expected: Abbr.";
+across[41] = "Solemn vow";
+across[42] = "Makes level";
+across[43] = "So far";
+across[44] = "Dog's hair";
+across[45] = "Feeling anxious";
+across[46] = "Charged atom";
+across[47] = "Volcano in Sicily";
+across[49] = "Mailer for breakable items";
+across[56] = "Woodwind instrument";
+across[57] = "Ins and ___ (important details)";
+across[58] = "Very angry";
+across[60] = "Jazz singer Fitzgerald";
+across[61] = "At no charge";
+across[62] = "Spicy-tasting";
+across[63] = "Narrate";
+across[64] = "Military outpost";
+across[65] = "Lauder of cosmetics";
+
+let down = [];
+down[1] = "Hawaiian necklace";
+down[2] = "___ Major (Big Dipper constellation)";
+down[3] = "Lion's bellow";
+down[4] = "Dutch cheese";
+down[5] = "Adorn";
+down[6] = "...happily every ___";
+down[7] = "Playground chute";
+down[8] = "Former spelling or Ukraine's capital";
+down[9] = "Emphasizes";
+down[10] = "Home made of logs";
+down[11] = "Actor Baldwin";
+down[12] = "Bagel or bun";
+down[13] = "St. ___ (city near Tampa)";
+down[21] = "Lab maze runner";
+down[22] = "Nuance of color";
+down[25] = "Home for monks";
+down[26] = "High-pitched woodwind";
+down[27] = "Lite, on food labels";
+down[28] = "Clumsy people";
+down[29] = "Salt Lake's state";
+down[30] = "Did electrical work";
+down[31] = "Cupcake topper";
+down[32] = "Feeling anxious";
+down[34] = "Be worried about";
+down[35] = "Summer hrs. in DC";
+down[36] = "Jump into a pool";
+down[38] = "Approximate 92.3 with 90, say";
+down[39] = "Impose a punishment on";
+down[44] = "Enemy";
+down[45] = "Smallest till bill";
+down[46] = "Best possible";
+down[47] = "Come in!";
+down[48] = "Sports bar screen";
+down[49] = "Verse writer";
+down[50] = "Equal to a task";
+down[51] = "Barbie or Ken";
+down[52] = "Money in Italy and Germany";
+down[53] = "Rocks that are mined";
+down[54] = "In the ___ (before now)";
+down[55] = "\"Small\" suffix for kitchen";
+down[59] = "Hurricane's center";
+
+testPuzzleDefinition.clues.across = across;
+testPuzzleDefinition.clues.down = down;
+
+		let currentPuzzle;
+		let allPuzzleDefinitions = [testPuzzleDefinition];
+		let defaultPuzzleState = {
+			direction: "across", // across or down
+			currentCellIndex: 0
+		}
+		let crosswordOptions;
+		let puzzleDefinition;
+		let puzzleState;
+			
+		window.addEventListener("load", async function(e) {
+			await initCrosswordsDb();
+			crosswordOptions = await crosswordsDb.get("settings", "me");
+			if (crosswordOptions === undefined || crosswordOptions === null) {
+				crosswordOptions = structuredClone(defaultCrosswordOptions);
+				saveSettings(crosswordOptions);
+			} else {
+				if (crosswordOptions.advanceToNextClueAtEndOfWord !== undefined) {
+					crosswordOptions.movementStyle = "stopAtEnd";
+					crosswordOptions.advanceToNextClueAtEndOfWord = undefined;
+				}
+			}
+			//loadPuzzleList();
+			
+			puzzleDefinition = allPuzzleDefinitions[0];
+			puzzleState = await getState(puzzleDefinition);
+			if (puzzleState === undefined || puzzleState === null) {
+				puzzleState = defaultPuzzleState;
+				puzzleState.date = puzzleDefinition.date;
+				puzzleState.source = puzzleDefinition.source;
+				puzzleState.description = puzzleDefinition.description;
+				if (puzzleState.cellGuesses === undefined || puzzleState.cellGuesses === null) {
+					puzzleState.cellGuesses = puzzleDefinition.cells.map((x) => { return {
+						"letter": (x !== "#" ? "" : x),
+						"type": ""
+						};});
+				}
+			}
+
+			currentPuzzle = new Puzzle(puzzleDefinition, puzzleState);
+			currentPuzzle.play();
+		});
+			
+		function Puzzle(definition, state) {
+			let pd = definition;
+			let ps = state;
+			let currentCellEl;
+			let focusInCellEl;
+			let clueEl;
+			
+			this.play = function play() {
+				displayPuzzle(createPuzzleGrid());
+				let puzzleGridEl = document.querySelector("div[class~='puzzle-grid']");
+				clueEl = document.querySelector("div[class='puzzle-clue']");
+				let cellIndex = ps.currentCellIndex;
+				if (cellIndex === 0) {
+					cellIndex = 1;
+				}
+				let initialFocusEl = puzzleGridEl.querySelector(`[cellindex="${cellIndex}"]`);
+				if (initialFocusEl !== undefined && initialFocusEl !== null) {
+					initialFocusEl.focus();
+				}
+			}
+			
+			let stateDebouncerId = 0;
+
+			function updateState() {
+				if (stateDebouncerId > 0) {
+					clearTimeout(stateDebouncerId);
+					stateDebouncerId = 0;
+				}
+				stateDebouncerId = setTimeout(async function() {
+					await saveState(ps);
+				}, 250);
+			}
+			
+			function toggleDirection() {
+				if (ps.direction === "across") {
+					ps.direction = "down";
+				} else {
+					ps.direction = "across";
+				}
+				updateState();
+			}
+			
+			function setCell(cellEl, letter) {
+				cellEl.innerText = letter.toUpperCase();
+				let cellIndex = parseInt(cellEl.getAttribute("cellindex"));
+				ps.cellGuesses[cellIndex].letter = cellEl.innerText;
+				if (crosswordOptions.showErrors) {
+					if (ps.cellGuesses[cellIndex].letter !== "" && ps.cellGuesses[cellIndex].letter !== pd.cells[cellIndex]) {
+						ps.cellGuesses[cellIndex].type = "wrong";
+						cellEl.setAttribute("guess", "wrong");
+					}
+				}
+				// Show errors may have been on so anything that is wrong and then fixed or cleared needs to be made waswrong.
+				let guessType = cellEl.getAttribute("guess");
+				if (guessType === "wrong" && (cellEl.innerText === "" || (ps.cellGuesses[cellIndex].letter === pd.cells[cellIndex]))) {
+					ps.cellGuesses[cellIndex].type = "waswrong";
+					cellEl.setAttribute("guess", "waswrong");
+				}
+					
+				// Is the puzzle complete?
+				let complete = true;
+				for (let i = 0; i < pd.cells.length; i++) {
+					if (pd.cells[i] !== ps.cellGuesses[i].letter) {
+						complete = false;
+						break;
+					}
+				}
+				
+				if (complete) {
+					setTimeout(function() {
+						alert("Yer done.");
+						}, 0);
+				} else {
+					updateState();
+				}
+			}
+			
+			function moveCell(test, increment, options) {
+				let focusEl = document.querySelector("[class~='puzzle-cell-focus']");
+				if (focusEl !== undefined && focusEl !== null) {
+					let cellindex = parseInt(focusEl.getAttribute("cellindex"));
+					let i = cellindex;
+					while (test(i)) {
+						if (pd.cells[i] === "#" && !(options?.hopBlocks)) {
+							break;
+						}
+						i = increment(i);
+						if  (pd.cells[i] !== "#") {
+							break;
+						}
+					}
+					if (i != cellindex) {
+						cellEl = document.querySelector(`[cellindex="${i}"]`);
+						if (cellEl !== undefined && cellEl !== null) {
+							cellEl.focus();
+						}
+					}
+				}
+			}
+			
+			function moveRight(options) {
+				moveCell((i) => (i % pd.size < pd.size -1), (i) => (i + 1), options);
+			}
+			
+			function moveLeft(options) {
+				moveCell((i) => (i % pd.size > 0), (i) => (i - 1), options);
+			}
+			
+			function moveUp(options) {
+				moveCell((i) => (i > 0), (i) => (i - pd.size), options);
+			}
+			
+			function moveDown(options) {
+				moveCell((i) => (Math.floor(i / pd.size) < pd.size), (i) => (i + pd.size), options);
+			}
+			
+			function moveNextCell(options) {
+				if (ps.direction === "across") {
+					moveRight(options);
+				} else {
+					moveDown(options);
+				}
+			}
+
+			function movePreviousCell(options) {
+				if (ps.direction === "across") {
+					moveLeft(options);
+				} else {
+					moveUp(options);
+				}
+			}
+			
+			document.addEventListener("keydown", function(e) {
+				let focusEl = document.querySelector("[class~='puzzle-cell-focus']");
+				if (focusEl !== undefined && focusEl !== null) {
+					let doDefault = true;
+					if (/^[a-z]$/i.test(e.key)) {
+						setCell(focusEl, e.key.toUpperCase());
+						moveNextCell();
+					} else if (e.key === " ") {
+						toggleDirection();
+						updateCurrentClue();
+						doDefault = false;
+					} else if (e.keyCode === 8) {
+						if (focusEl.innerText === "") {
+							movePreviousCell();
+							focusEl = document.querySelector("[class~='puzzle-cell-focus']");
+							if (focusEl === undefined || focusEl === null) {
+								return;
+							}
+						}
+						setCell(focusEl, "");
+					} else if (e.keyCode === 40) { // down
+						moveDown({hopBlocks: true});
+						doDefault = false;
+					} else if (e.keyCode === 38) { // up
+						moveUp({hopBlocks: true});
+						doDefault = false;
+					} else if (e.keyCode === 37) { // left
+						moveLeft({hopBlocks: true});
+						doDefault = false;
+					} else if (e.keyCode === 39) { // right
+						moveRight({hopBlocks: true});
+						doDefault = false;
+					}
+					
+					if (!doDefault) {
+						e.preventDefault();
+						e.cancelBubble = true;
+						e.stopPropagation();
+					}
+				}
+			});
+			
+			function isCell(el, pd) {
+				if (el !== undefined && el !== null && el.classList.contains("puzzle-cell")) {
+					let cellindex = parseInt(el.getAttribute("cellindex"));
+					if (pd.cells[cellindex] !== "#") {
+						return true;
+					}
+				}
+				return false;
+			}
+			
+			function isKey(el) {
+				if (el.classList.contains("puzzle-keyboard-key")) {
+					return true;
+				} else if (el.parentElement.classList.contains("puzzle-keyboard-key")) {
+					return true;
+				}
+				return false;
+			}
+			
+//var tempEl = document.createElement("div");
+//tempEl.innerHTML = '<input type="text" name="letterEnter" autocomplete="off" inputmode="text" class="puzzle-input"/>';
+//var inputEl = tempEl.firstChild;
+//document.lastChild.appendChild(inputEl);
+			document.addEventListener("focusin", function(e) {
+				if (isCell(e.target, puzzleDefinition)) {
+					let focusEl = document.querySelector("[class~='puzzle-cell-focus']");
+					if (focusEl !== undefined && focusEl !== null) {
+						focusEl.classList.remove("puzzle-cell-focus");
+					}
+					e.target.classList.add("puzzle-cell-focus");
+					focusInCellEl = e.target;
+					currentCellEl = e.target;
+					updateCurrentClue();
+				}
+			});
+			
+			document.addEventListener("click", function(e) {
+				if (isCell(e.target, puzzleDefinition)) {
+					if (focusInCellEl === e.target) {
+						focusInCellEl = undefined;
+						return;
+					}
+					if (currentCellEl === e.target) {
+						toggleDirection();
+						updateCurrentClue();
+					} else {
+						e.target.focus();
+					}
+				} else if (isKey(e.target)) {
+					let focusEl = document.querySelector("[class~='puzzle-cell-focus']");
+					if (focusEl !== undefined && focusEl !== null) {
+						let key = e.target.getAttribute("key-action");
+						if (key === undefined || key === null) {
+							key = e.target.parentElement.getAttribute("key-action");
+						}
+						if (key === "_") {
+							toggleDirection();
+							updateCurrentClue();
+						} else if (key === "bs") {
+							if (focusEl.innerText === "") {
+								movePreviousCell();
+								focusEl = document.querySelector("[class~='puzzle-cell-focus']");
+								if (focusEl === undefined || focusEl === null) {
+									return;
+								}
+							}
+							setCell(focusEl, "");
+						} else if (/^[a-z]$/i.test(key)) {
+							setCell(focusEl, key.toUpperCase());
+							moveNextCell();
+						}
+					}
+				} else {
+					let targetEl = e.target;
+					while (targetEl !== undefined && targetEl !== null && !(/button/i.test(targetEl.tagName))) {
+						targetEl = targetEl.parentElement;
+					}
+					if (targetEl !== null && targetEl !== undefined) {
+						let action = targetEl.getAttribute("action");
+						let m = /^show-dialog-(?<button>.*)$/.exec(action);
+						if (m !== undefined && m !== null) {
+							let dialogEl = document.querySelector("#"+m.groups["button"]);
+							if (dialogEl !== undefined && dialogEl !== null) {
+								if (!dialogEl.inited) {
+									dialogEl.inited = true;
+									dialogEl.updateShowErrorsIcon = function updateShowErrorsIcon(el) {
+										if (el.dataset.propName === "showErrors") {
+											if (crosswordOptions[el.dataset.propName]) {
+												el.parentElement.nextSibling.setAttribute("guess", "waswrong");
+											} else {
+												el.parentElement.nextElementSibling.removeAttribute("guess");
+											}
+										}
+									};
+									dialogEl.addEventListener("click", function(e) {
+										if (e.target.dataset.propName !== undefined && e.target.dataset.propName !== null) {
+											if (e.target.dataset.propName === "showErrors" || e.target.dataset.propName === "skipFilledCells") {
+												crosswordOptions[e.target.dataset.propName] = e.target.checked;
+											} else {
+												crosswordOptions[e.target.dataset.propName] = e.target.value;
+											}
+											saveSettings(crosswordOptions);
+											dialogEl.updateShowErrorsIcon(e.target);
+										}
+									});
+									let checkEl = dialogEl.querySelector("#ShowErrors");
+									checkEl.checked = crosswordOptions.showErrors;
+									dialogEl.updateShowErrorsIcon(checkEl);
+									checkEl = dialogEl.querySelector("#MovementStyle");
+									checkEl.value = crosswordOptions.movementStyle;
+									checkEl = dialogEl.querySelector("#SkipFilled");
+									checkEl.checked = crosswordOptions.skipFilledCells;
+								}
+								dialogEl.showModal();
+							}
+						} else {
+							if (e.target.classList.contains("close-btn")) {
+								let dialogEl = e.target;
+								while (dialogEl !== undefined && dialogEl !== null) {
+									if (dialogEl.nodeName === "DIALOG") {
+										dialogEl.close();
+										break;
+									}
+									dialogEl = dialogEl.parentElement;
+								}
+							}
+						}
+					}
+				}
+			});
+
+			function getClueNumber(cellEl) {
+				let clueNumber = 0;
+				if (cellEl !== undefined && cellEl !== null) {
+					let cn = cellEl.getAttribute("cluenumber");
+					if (cn !== undefined && cn !== null) {
+						clueNumber = parseInt(cn);
+						if (clueNumber === Number.NaN) {
+							clueNumber = 0;
+						}
+					}
+				}
+				return clueNumber;
+			}
+			
+			function updateCurrentClue() {
+				let clearCells = document.querySelectorAll("[class~='puzzle-cell-current-clue']");
+				let highlightCells = [];
+				if (currentCellEl !== undefined && currentCellEl !== null) {
+					let cellindex = parseInt(currentCellEl.getAttribute("cellindex"));
+					let i
+					let cellEl;
+					let clueNumber = 0;
+					
+					if (ps.currentCellIndex !== cellindex) {
+						ps.currentCellIndex = cellindex;
+						updateState();
+					}
+
+					if (ps.direction === "across") {
+						let rowStartIndex = cellindex - Math.floor(cellindex % pd.size);
+						for (i = cellindex; i >= rowStartIndex; i--) {
+							if (pd.cells[i] === "#") {
+								break;
+							}
+							cellEl = document.querySelector(`[cellindex="${i}"]`);
+							if (cellEl !== undefined && cellEl !== null) {
+								highlightCells.push(cellEl);
+								clueNumber = getClueNumber(cellEl);
+							}
+						}
+						let rowEndIndex = rowStartIndex + pd.size;
+						for (i = cellindex + 1; i < rowEndIndex; i++) {
+							if (pd.cells[i] === "#") {
+								break;
+							}
+							cellEl = document.querySelector(`[cellindex="${i}"]`);
+							if (cellEl !== undefined && cellEl !== null) {
+								highlightCells.push(cellEl);
+							}
+						}
+					} else {
+						let colStartIndex = Math.floor(cellindex % pd.size);
+						for (i = cellindex; i >= colStartIndex; i = i - pd.size) {
+							if (pd.cells[i] === "#") {
+								break;
+							}
+							cellEl = document.querySelector(`[cellindex="${i}"]`);
+							if (cellEl !== undefined && cellEl !== null) {
+								highlightCells.push(cellEl);
+								clueNumber = getClueNumber(cellEl);
+							}
+						}
+						let colEndIndex = ((pd.size * pd.size) - pd.size) + colStartIndex + 1;
+						for (i = cellindex + pd.size; i < colEndIndex; i = i + pd.size) {
+							if (pd.cells[i] === "#") {
+								break;
+							}
+							cellEl = document.querySelector(`[cellindex="${i}"]`);
+							if (cellEl !== undefined && cellEl !== null) {
+								highlightCells.push(cellEl);
+							}
+						}
+					}
+					
+					if (clueNumber !== 0 && clueNumber !== ps.currentClueNumber) {
+						if (clueEl !== undefined && clueEl !== null) {
+							let directionText = ps.direction;
+							let clue = pd.clues[ps.direction][clueNumber];
+							clueEl.innerText = `(${directionText}) ${clueNumber}. ${clue}`;
+						}
+					}
+				}
+				
+				if (clearCells !== undefined && clearCells !== null) {
+					// If a cell to be hightlighted already is highlighted remove it from
+					// the list to
+					let cells = Array.from(clearCells);
+					let difference = cells.filter(cell => !highlightCells.includes(cell));
+					for (const el of difference) {
+						el.classList.remove("puzzle-cell-current-clue");
+					}
+				}
+				if (highlightCells.length > 0) {
+					for (const el of highlightCells) {
+						if (!el.classList.contains("puzzle-cell-current-clue")) {
+							el.classList.add("puzzle-cell-current-clue");
+						}
+					}
+				}
+			}
+			
+			function createPuzzleGrid() {
+				let puzzleHtml = "";
+
+				let cellNumber = 0;
+				for (let cellIndex = 0; cellIndex < pd.size * pd.size; cellIndex++) {
+					let clueNumber = "";
+					if (pd.cells[cellIndex] != "#") {
+						let row = Math.floor(cellIndex / pd.size);
+						let col = Math.floor(cellIndex % pd.size);
+						if (row == 0 || col == 0) {
+							cellNumber = cellNumber + 1;
+							clueNumber = "" + cellNumber;
+						} else if (cellIndex > 0 && pd.cells[cellIndex -1] == "#" ||
+								   cellIndex > pd.size && pd.cells[cellIndex - pd.size] == "#") {
+							cellNumber = cellNumber + 1;
+							clueNumber = "" + cellNumber;
+						}
+					}
+					let moreClass = "";
+					let tabIndex = 'tabindex="0"';
+					if (pd.cells[cellIndex] === "#") {
+						moreClass = "puzzle-cell-block";
+						tabIndex = "";
+					}
+					let letter = puzzleState.cellGuesses[cellIndex].letter;
+					let guess = puzzleState.cellGuesses[cellIndex].type;
+					puzzleHtml += `<div class="puzzle-cell ${moreClass}" ${tabIndex} cellindex="${cellIndex}" cluenumber="${clueNumber}" guess="${guess}">${letter}</div>`
+				}
+				return puzzleHtml;
+			}
+			
+			function displayPuzzle(puzzleHtml) {
+				let puzzleEl = document.querySelector("div.puzzle-grid");
+				if (puzzleEl !== undefined && puzzleEl !== null) {
+					puzzleEl.style.setProperty("--puzzle-size", "" + pd.size);
+					puzzleEl.innerHTML = puzzleHtml;
+				}
+			}
+		}
+		</script>
+
+	<style>
+	.grid_layout {
+		display: grid;
+		grid-template-rows: auto 1fr auto;
+		min-height: calc(100vh - 3.5rem);
+	}
+
+	.page_header {
+		grid-row: 1;
+		background-color: lightblue;
+		background-color: #5d5d5d;
+		color: white;
+		z-index: 1;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		flex-wrap: nowrap;
+		justify-content: space-between;
+	}
+
+	.page_content {
+		background-color: lightyellow;
+		position: relative;
+		grid-row: 2;
+		overflow: auto;
+	}
+
+	.scrollable_content {
+		position: absolute;
+	}
+
+	.page_footer {
+		grid-row: 3;
+		border-top-style: solid;
+		border-top-width: 1px;
+		border-top-color: lightgray;
+		padding: 0.5rem;
+		padding-bottom: 0;
+		display: inline-grid;
+		grid-template-columns: repeat(10, 1fr);
+		font-size: 1.25rem;
+		background-color: #f1f1f1;
+		color: black;
+		cursor: default;
+		width: min-content;
+	}
+
+	</style>
+</head>
+<body>
+	<div class="grid_layout">
+		<div class="page_header">
+			<button class="puzzle-button" action="return-to-puzzle-list">
+				<svg class="" fill="currentColor" aria-hidden="true" width="1em" height="1em" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+					<path d="M8.73 16.8a.75.75 0 0 0 1.03-1.1l-5.24-4.95h12.73a.75.75 0 0 0 0-1.5H4.52l5.24-4.96A.75.75 0 1 0 8.73 3.2L2.31 9.27a1 1 0 0 0 0 1.46l6.42 6.07Z" fill="currentColor"></path>
+				</svg>
+			</button>
+			<div class="puzzle-clue"></div>
+			<button class="puzzle-button" action="show-dialog-puzzle-settings">&vellip;</button>
+		</div>
+		<div class="page_content">
+			<div class="puzzle-grid scrollable_content"></div>
+		</div>
+		<div class="page_footer">
+			<div class="puzzle-keyboard-key" key-action="q">q</div><div class="puzzle-keyboard-key" key-action="w">w</div><div class="puzzle-keyboard-key" key-action="e">e</div><div class="puzzle-keyboard-key" key-action="r">r</div><div class="puzzle-keyboard-key" key-action="t">t</div><div class="puzzle-keyboard-key" key-action="y">y</div><div class="puzzle-keyboard-key" key-action="u">u</div><div class="puzzle-keyboard-key" key-action="i">i</div><div class="puzzle-keyboard-key" key-action="o">o</div><div class="puzzle-keyboard-key" key-action="p">p</div>
+			<div class="puzzle-keyboard-key" key-action=""></div><div class="puzzle-keyboard-key" key-action="a">a</div><div class="puzzle-keyboard-key" key-action="s">s</div><div class="puzzle-keyboard-key" key-action="d">d</div><div class="puzzle-keyboard-key" key-action="f">f</div><div class="puzzle-keyboard-key" key-action="g">g</div><div class="puzzle-keyboard-key" key-action="h">h</div><div class="puzzle-keyboard-key" key-action="j">j</div><div class="puzzle-keyboard-key" key-action="k">k</div><div class="puzzle-keyboard-key" key-action="l">l</div>
+			<div class="puzzle-keyboard-key" key-action="_">_</div><div class="puzzle-keyboard-key" key-action="z">z</div><div class="puzzle-keyboard-key" key-action="x">x</div><div class="puzzle-keyboard-key" key-action="c">c</div><div class="puzzle-keyboard-key" key-action="v">v</div><div class="puzzle-keyboard-key" key-action="b">b</div><div class="puzzle-keyboard-key" key-action="n">n</div><div class="puzzle-keyboard-key" key-action="m">m</div><div class="puzzle-keyboard-key" key-action="bs"><img src="backspace.svg" width="24px" height="24px"></div><div class="puzzle-keyboard-key" key-action=""></div>
+		</div>
+	</div>
+</body>
+
+<!-- body style="perspective: 600px;">
+	<div class="card" style="width: 100%; height: 100%; position:relative;transition: transform 1s; transform-style: preserve-3d">
+		<div class="face" style="position: absolute; backface-visibility: hidden; display: flex; flex-direction: column; align-items: stretch;">
+			<main>
+				<div id="clientArea" class="client-area">
+					<div class="puzzle-header">
+						<button class="puzzle-button" action="return-to-puzzle-list">
+							<svg class="" fill="currentColor" aria-hidden="true" width="1em" height="1em" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+								<path d="M8.73 16.8a.75.75 0 0 0 1.03-1.1l-5.24-4.95h12.73a.75.75 0 0 0 0-1.5H4.52l5.24-4.96A.75.75 0 1 0 8.73 3.2L2.31 9.27a1 1 0 0 0 0 1.46l6.42 6.07Z" fill="currentColor"></path>
+							</svg>
+						</button>
+						<div class="puzzle-clue"></div>
+						<button class="puzzle-button" action="show-dialog-puzzle-settings">&vellip;</button>
+					</div>
+					<div class="puzzle-content">
+						<div class="puzzle-grid"></div>
+					</div>
+				</div>
+			</main>
+			<footer>
+				<div class="puzzle-keyboard-key" key-action="q">q</div><div class="puzzle-keyboard-key" key-action="w">w</div><div class="puzzle-keyboard-key" key-action="e">e</div><div class="puzzle-keyboard-key" key-action="r">r</div><div class="puzzle-keyboard-key" key-action="t">t</div><div class="puzzle-keyboard-key" key-action="y">y</div><div class="puzzle-keyboard-key" key-action="u">u</div><div class="puzzle-keyboard-key" key-action="i">i</div><div class="puzzle-keyboard-key" key-action="o">o</div><div class="puzzle-keyboard-key" key-action="p">p</div>
+				<div class="puzzle-keyboard-key" key-action=""></div><div class="puzzle-keyboard-key" key-action="a">a</div><div class="puzzle-keyboard-key" key-action="s">s</div><div class="puzzle-keyboard-key" key-action="d">d</div><div class="puzzle-keyboard-key" key-action="f">f</div><div class="puzzle-keyboard-key" key-action="g">g</div><div class="puzzle-keyboard-key" key-action="h">h</div><div class="puzzle-keyboard-key" key-action="j">j</div><div class="puzzle-keyboard-key" key-action="k">k</div><div class="puzzle-keyboard-key" key-action="l">l</div>
+				<div class="puzzle-keyboard-key" key-action="_">_</div><div class="puzzle-keyboard-key" key-action="z">z</div><div class="puzzle-keyboard-key" key-action="x">x</div><div class="puzzle-keyboard-key" key-action="c">c</div><div class="puzzle-keyboard-key" key-action="v">v</div><div class="puzzle-keyboard-key" key-action="b">b</div><div class="puzzle-keyboard-key" key-action="n">n</div><div class="puzzle-keyboard-key" key-action="m">m</div><div class="puzzle-keyboard-key" key-action="bs"><img src="backspace.svg" width="24px" height="24px"></div><div class="puzzle-keyboard-key" key-action=""></div>
+			</footer>
+		</div>
+	</div>
+	
+							<button class="puzzle-button" action="show-dialog-puzzle-settings">
+							<svg class="" fill="currentColor" width="1em" height="1em" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+								<path d="M13.85 22.25h-3.7c-.74 0-1.36-.54-1.45-1.27l-.27-1.89c-.27-.14-.53-.29-.79-.46l-1.8.72c-.7.26-1.47-.03-1.81-.65L2.2 15.53c-.35-.66-.2-1.44.36-1.88l1.53-1.19c-.01-.15-.02-.3-.02-.46 0-.15.01-.31.02-.46l-1.52-1.19c-.59-.45-.74-1.26-.37-1.88l1.85-3.19c.34-.62 1.11-.9 1.79-.63l1.81.73c.26-.17.52-.32.78-.46l.27-1.91c.09-.7.71-1.25 1.44-1.25h3.7c.74 0 1.36.54 1.45 1.27l.27 1.89c.27.14.53.29.79.46l1.8-.72c.71-.26 1.48.03 1.82.65l1.84 3.18c.36.66.2 1.44-.36 1.88l-1.52 1.19c.01.15.02.3.02.46s-.01.31-.02.46l1.52 1.19c.56.45.72 1.23.37 1.86l-1.86 3.22c-.34.62-1.11.9-1.8.63l-1.8-.72c-.26.17-.52.32-.78.46l-.27 1.91c-.1.68-.72 1.22-1.46 1.22zm-3.23-2h2.76l.37-2.55.53-.22c.44-.18.88-.44 1.34-.78l.45-.34 2.38.96 1.38-2.4-2.03-1.58.07-.56c.03-.26.06-.51.06-.78s-.03-.53-.06-.78l-.07-.56 2.03-1.58-1.39-2.4-2.39.96-.45-.35c-.42-.32-.87-.58-1.33-.77l-.52-.22-.37-2.55h-2.76l-.37 2.55-.53.21c-.44.19-.88.44-1.34.79l-.45.33-2.38-.95-1.39 2.39 2.03 1.58-.07.56a7 7 0 0 0-.06.79c0 .26.02.53.06.78l.07.56-2.03 1.58 1.38 2.4 2.39-.96.45.35c.43.33.86.58 1.33.77l.53.22.38 2.55z" fill="currentColor"></path>
+									<circle cx="12" cy="12" r="3.5"></circle>
+							</svg>
+						</button>
+						
+	<dialog id="puzzle-settings">
+		<div class="dlg-title">
+			<h1>Settings</h1>
+			<button class="close-btn">&times;</button>
+		</div>
+		<div class="dlg-row dlg-row-justify-left">
+			<div class="dlg-row dlg-row-space-between">
+			<label class="checkbox-label" for="ShowErrors"><input type="checkbox" name="ShowErrors" id="ShowErrors" data-prop-name="showErrors"/>Show errors</label><div class="puzzle-cell puzzle-cell-sample" cluenumber="23"></div>
+			</div>
+			<div class="dlg-row-description">Show incorrect letters and show where errors were shown even if correct letter is now there.</div>
+		</div>
+		<div class="dlg-row dlg-row-justify-left">
+			<label class="checkbox-label" for="SkipFilled"><input type="checkbox" name="SkipFilled" id="SkipFilled" data-prop-name="skipFilledCells" />Skip filled boxes</label>
+			<div class="dlg-row-description">Skip over boxes that are already filled in.</div>
+		</div>
+		<div class="dlg-row dlg-row-justify-left">
+			<label for="MoveToNextClue">Movement style</label>
+			<select name="MovementStyle" id="MovementStyle" data-prop-name="movementStyle">
+				<option value="nextWordInLine">Next word in line</option>
+				<option value="stopAtEnd">Stop at the end</option>
+				<option value="nextClueInSameDirection">Next clue in same direction</option>
+				<option value="nextParallelClue">Next parallel clue</option>
+			</select>
+			<div class="dlg-row-description">Select what happens when you type past the end of a word.</div>
+		</div>
+		<hr/>
+		<description>Puzzle Description</description>
+		<author>Puzzle author</author>
+		<copyright>Puzzle copyright</copyright>
+	</dialog>
+</body -->
+</html>
