@@ -488,6 +488,12 @@ testPuzzleDefinition.clues.down = down;
 		</script>
 
 	<style>
+	:root {
+		--mustard-color: #CDA73D;
+		--gray-text-color: #B4B4B4;
+		--green-text-color: #4E8F5F;
+	}
+
 	html {
 		letter-spacing: 0.02rem;
 	}
@@ -563,13 +569,39 @@ testPuzzleDefinition.clues.down = down;
 	}
 	
 	.list-prefix {
+		--text-color: var(--mustard-color);
 		display: inline-flex;
-		height: 4.5rem;
-		width: 4.5rem;
+		color: var(--text-color);
+		height: 4rem;
+		width: 4rem;
 		align-items: center;
 		justify-content: center;
+		margin-left: 0.5rem;
+		margin-right: 0.5rem;
 	}
 	
+	.list-prefix-layer {
+		position: absolute;
+	}
+	
+	.circle {
+		aspect-ratio: 1;
+		padding: 3px;
+		box-sizing: border-box;
+		border-radius: 50%;
+		background: var(--mustard-color);
+		mask:
+			linear-gradient(#0000 0 0) content-box intersect,
+			conic-gradient(#000 360deg,#0000 0);
+	}
+	
+	.arc {
+		padding: 9px; /* the boder thickness */
+		mask:
+			linear-gradient(#0000 0 0) content-box intersect,
+			conic-gradient(#000 calc(.17 * 360deg),#0000 0);
+	}
+
 	.list-data {
 		flex-grow: 1;
 	}
@@ -617,6 +649,10 @@ testPuzzleDefinition.clues.down = down;
 					<div>Sat Mar 01, 2025</div>
 				</li>
 				<li class="list-item">
+					<div class="list-prefix list-prefix-layer circle">
+					</div>
+					<div class="list-prefix list-prefix-layer circle arc">
+					</div>
 					<div class="list-prefix">
 						17%
 					</div>
