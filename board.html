@@ -318,8 +318,8 @@
 			crosswordsDb = await idb.openDB("crosswords", 1, {
 				upgrade(db, oldVersion, newVersion, transaction, event) {
 					const settingsStore = db.createObjectStore("settings", { keyPath: "id" });
-					const puzzleStore = db.createObjectStore("puzzles", { keyPath: ["date", "source", "description"] });
-					const playedPuzzlesStore = db.createObjectStore("playedPuzzles", { keyPath: ["date", "source", "description"] });
+					const puzzleStore = db.createObjectStore("puzzles", { keyPath: ["date", "source", "title"] });
+					const playedPuzzlesStore = db.createObjectStore("playedPuzzles", { keyPath: ["date", "source", "title"] });
 				},
 				blocked(currentVersion, blockedVersion, event) {
 					console.log("initCrosswordsDb - blocked");
@@ -342,7 +342,7 @@
 		}
 
 		async function getState(pd) {
-			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.description]);
+			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.title]);
 		}
 		
 		let defaultCrosswordOptions = {
@@ -355,20 +355,23 @@
 		};
 
 //		testPuzzleCellContent = "SUSHI#SAPS#OPALASHEN#PLIE#VERYWEIRDPRESCIENCEURIS#AIR#SLR###PIT#PINON#LAPEL#DECENT#CBSNEWS###HEF#AAA#DRED#THEPREFABFOUR#ASEA#ELL#YOU###SAMPLES#ABATED#PRILE#EPSOM#XED###ANT#USO#SCARVICTORPREMATUREERIE#EDEN#OASISTAGS#STET#KNEES";
-		let testPuzzleCellContent = "LURED#ASKS#CARPERODE#FLIT#ALOEISAAC#TIER#BELT#ARMOREDVEHICLE####RARE#SUN###AFLOAT##USE#WITBLOAT#FETE#DICEBUFFEREDASPIRINETAS#OATH#EVENSYET#FUR##ONEDGE###ION#ETNA####PADDEDENVELOPE#OBOE#OUTS#IRATEELLA#FREE#ZESTYTELL#FORT#ESTEE"
-		let testPuzzleDefinition = {
+//		let testPuzzleCellContent = "LURED#ASKS#CARPERODE#FLIT#ALOEISAAC#TIER#BELT#ARMOREDVEHICLE####RARE#SUN###AFLOAT##USE#WITBLOAT#FETE#DICEBUFFEREDASPIRINETAS#OATH#EVENSYET#FUR##ONEDGE###ION#ETNA####PADDEDENVELOPE#OBOE#OUTS#IRATEELLA#FREE#ZESTYTELL#FORT#ESTEE"
+/*		let testPuzzleDefinition = {
 			date: 1741563461393,
 			source: "Terry Store",
-			description: "Test crossword puzzle I copied from somewhere.",
+			title: "Test crossword puzzle I copied from somewhere.",
 			author: "Author is unknown",
 			copyright: "© The author owns the copyright.",
-			size: 15,
-			cells: Array.from(testPuzzleCellContent),
+			rows: 15,
+			columns: 15,
+			cellContent: "LURED#ASKS#CARPERODE#FLIT#ALOEISAAC#TIER#BELT#ARMOREDVEHICLE####RARE#SUN###AFLOAT##USE#WITBLOAT#FETE#DICEBUFFEREDASPIRINETAS#OATH#EVENSYET#FUR##ONEDGE###ION#ETNA####PADDEDENVELOPE#OBOE#OUTS#IRATEELLA#FREE#ZESTYTELL#FORT#ESTEE",
+			cells: [],
 			clues: {
 				across: [],
 				down: []
 			}
 		};
+		testPuzzleDefinition.cells = Array.from(testPuzzleDefinition.cellContent);
 let across = [];
 across[1] = "Tempted";
 across[6] = "Makes an inquiry";
@@ -453,7 +456,104 @@ down[59] = "Hurricane's center";
 
 testPuzzleDefinition.clues.across = across;
 testPuzzleDefinition.clues.down = down;
-
+*/
+		let testPuzzleDefinition = {
+      "source": "Jonesin' Crosswords",
+      "title": "\"Double, Double\"--the powers of two compel you!",
+      "author": "by Matt Jones",
+      "date": "2025-05-08",
+      "copyright": "© 2025 Matt Jones",
+      "notes": "",
+      "cellContent": "CSPAN#RHO#CRANEOPENOCEAN#LASERQUADRUPLEVISIONARCS#POE#AMP###USE#LFS#CUB#PHO###PAU#VAL#SEEPOCTUPLEENTENDRELEEDS#LEA#PAREDSEXDECUPLECROSSOLAY#ADS#JOE###NON#APE#JET#FIT###SIR#PEC#SASHDUOTRIGINTUPLEUANNIE#EGGSLICERBOARD#TSA#ETONS",
+      "rows": 15,
+      "columns": 15,
+      "clues": {
+        "across": [null, "House broadcaster",
+          null, null, null, null, "Letter after pi",
+          null, null, "Origami bird",
+          null, null, null, null, "Area well beyond the coast",
+          null, "Pointer's beam",
+          "Eyeglass prescription effect times 4?",
+          null, "Curved paths",
+          "He wrote \"The Raven\"",
+          "Piece of sound equipment",
+          "Partake of",
+          "Barry Bonds and Willie Stargell, for short",
+          "Baby leopard",
+          "Soup with sprouts and slices of beef",
+          null, null, "2002 NBA Rookie of the Year ___ Gasol",
+          "Late actor Kilmer",
+          "Percolate slowly",
+          "Saying that has about 8 different meanings, some of them dirty?",
+          null, null, null, null, "English university town",
+          "Salonga of Broadway",
+          "Cut down",
+          "Con game run 16 different ways?",
+          null, null, "Maker of Regenerist skin care products",
+          "You may pay less to get more of them",
+          "Biden, familiarly",
+          "The \"N\" of NDA",
+          "\"George of the Jungle\" creature",
+          "\"Top Gun\" flier",
+          "Proper",
+          null, null, "Knight's title",
+          "Chest muscle, for short",
+          "Pageant garment",
+          "Hybrid letter with 32 peaks that just looks like a long zigzag?",
+          null, null, null, null, "Photographer Leibovitz",
+          "Gadget used after hard-boiling, perhaps",
+          "Piece of lumber",
+          "Airport presence",
+          "British formal jackets"
+        ],
+        "down": [null, "___ vin (chicken dish)",
+          "San Antonio team",
+          "Nobel Prize category",
+          "Partners of \"ifs\" or \"buts\"",
+          "It goes with \"neither\"",
+          "Auto takebacks",
+          "Revolutionary War spy Nathan",
+          "Number under the ! on a keyboard",
+          "Go higher",
+          "Speak with a gravelly voice",
+          "\"Bad ___ Wanna Be\" (Dennis Rodman book)",
+          "Prefix for classicist",
+          "Ending for north, west, or northwest",
+          null, "Dry ingredient recipe measurement",
+          null, null, "Bank's storage room",
+          null, null, null, null, "Expire, like a subscription",
+          "Panama divider",
+          "\"The Last of Us\" star Pascal",
+          "\"___ Johnny!\"",
+          "Columnists' pieces",
+          "\"Seinfeld\" character played by Patrick Warburton",
+          "Gore and Mondale, for two",
+          "Marching band drum",
+          "Actress Kaitlin of ABC's \"High Potential\"",
+          "\"Forget You\" singer Green",
+          "From Amarillo, say",
+          "Evade capture by",
+          "Theme park at Disney World",
+          null, null, null, null, "___ pants (calf-length trousers)",
+          "Takes a DVD out",
+          null, null, null, null, "Put on television",
+          "Block-removing game",
+          "\"Rock Me Amadeus\" musician",
+          "\"Where have ___ this before?\"",
+          "Thanksgiving day: Abbr.",
+          "Mix, as cocoa",
+          "Barnyard animals",
+          "BBQ rod",
+          "Little bit of gel",
+          "Four-color card game",
+          "\"Snakes ___ Plane\"",
+          "Receive",
+          "Suffix for glob or nod"
+        ]
+      }
+	  };
+	  testPuzzleDefinition.cells = Array.from(testPuzzleDefinition.cellContent);
+	  
 		let currentPuzzle;
 		let allPuzzleDefinitions = [testPuzzleDefinition];
 		let defaultPuzzleState = {
@@ -466,9 +566,9 @@ testPuzzleDefinition.clues.down = down;
 			
 		window.addEventListener("load", async function(e) {
 		
-debugger;		
-		const response = await fetch("https://bright-rat-90.deno.dev/?date=2025-04-10");
-		const data = await response.text();
+//debugger;		
+//		const response = await fetch("https://bright-rat-90.deno.dev/?date=2025-04-10");
+//		const data = await response.text();
 		
 		
 			await initCrosswordsDb();
@@ -490,7 +590,7 @@ debugger;
 				puzzleState = defaultPuzzleState;
 				puzzleState.date = puzzleDefinition.date;
 				puzzleState.source = puzzleDefinition.source;
-				puzzleState.description = puzzleDefinition.description;
+				puzzleState.title = puzzleDefinition.title;
 				if (puzzleState.cellGuesses === undefined || puzzleState.cellGuesses === null) {
 					puzzleState.cellGuesses = puzzleDefinition.cells.map((x) => { return {
 						"letter": (x !== "#" ? "" : x),
@@ -604,19 +704,19 @@ debugger;
 			}
 			
 			function moveRight(options) {
-				moveCell((i) => (i % pd.size < pd.size -1), (i) => (i + 1), options);
+				moveCell((i) => (i % pd.columns < pd.columns -1), (i) => (i + 1), options);
 			}
 			
 			function moveLeft(options) {
-				moveCell((i) => (i % pd.size > 0), (i) => (i - 1), options);
+				moveCell((i) => (i % pd.columns > 0), (i) => (i - 1), options);
 			}
 			
 			function moveUp(options) {
-				moveCell((i) => (i > 0), (i) => (i - pd.size), options);
+				moveCell((i) => (i > 0), (i) => (i - pd.rows), options);
 			}
 			
 			function moveDown(options) {
-				moveCell((i) => (Math.floor(i / pd.size) < pd.size), (i) => (i + pd.size), options);
+				moveCell((i) => (Math.floor(i / pd.rows) < pd.rows), (i) => (i + pd.rows), options);
 			}
 			
 			function moveNextCell(options) {
@@ -837,7 +937,7 @@ debugger;
 					}
 
 					if (ps.direction === "across") {
-						let rowStartIndex = cellindex - Math.floor(cellindex % pd.size);
+						let rowStartIndex = cellindex - Math.floor(cellindex % pd.columns);
 						for (i = cellindex; i >= rowStartIndex; i--) {
 							if (pd.cells[i] === "#") {
 								break;
@@ -848,7 +948,7 @@ debugger;
 								clueNumber = getClueNumber(cellEl);
 							}
 						}
-						let rowEndIndex = rowStartIndex + pd.size;
+						let rowEndIndex = rowStartIndex + pd.columns;
 						for (i = cellindex + 1; i < rowEndIndex; i++) {
 							if (pd.cells[i] === "#") {
 								break;
@@ -859,8 +959,8 @@ debugger;
 							}
 						}
 					} else {
-						let colStartIndex = Math.floor(cellindex % pd.size);
-						for (i = cellindex; i >= colStartIndex; i = i - pd.size) {
+						let colStartIndex = Math.floor(cellindex % pd.rows);
+						for (i = cellindex; i >= colStartIndex; i = i - pd.rows) {
 							if (pd.cells[i] === "#") {
 								break;
 							}
@@ -870,8 +970,8 @@ debugger;
 								clueNumber = getClueNumber(cellEl);
 							}
 						}
-						let colEndIndex = ((pd.size * pd.size) - pd.size) + colStartIndex + 1;
-						for (i = cellindex + pd.size; i < colEndIndex; i = i + pd.size) {
+						let colEndIndex = ((pd.columns * pd.rows) - pd.columns) + colStartIndex + 1;
+						for (i = cellindex + pd.columns; i < colEndIndex; i = i + pd.columns) {
 							if (pd.cells[i] === "#") {
 								break;
 							}
@@ -913,16 +1013,16 @@ debugger;
 				let puzzleHtml = "";
 
 				let cellNumber = 0;
-				for (let cellIndex = 0; cellIndex < pd.size * pd.size; cellIndex++) {
+				for (let cellIndex = 0; cellIndex < pd.columns * pd.rows; cellIndex++) {
 					let clueNumber = "";
 					if (pd.cells[cellIndex] != "#") {
-						let row = Math.floor(cellIndex / pd.size);
-						let col = Math.floor(cellIndex % pd.size);
+						let row = Math.floor(cellIndex / pd.columns);
+						let col = Math.floor(cellIndex % pd.rows);
 						if (row == 0 || col == 0) {
 							cellNumber = cellNumber + 1;
 							clueNumber = "" + cellNumber;
 						} else if (cellIndex > 0 && pd.cells[cellIndex -1] == "#" ||
-								   cellIndex > pd.size && pd.cells[cellIndex - pd.size] == "#") {
+								   cellIndex > pd.columns && pd.cells[cellIndex - pd.columns] == "#") {
 							cellNumber = cellNumber + 1;
 							clueNumber = "" + cellNumber;
 						}
@@ -943,7 +1043,7 @@ debugger;
 			function displayPuzzle(puzzleHtml) {
 				let puzzleEl = document.querySelector("div.puzzle-grid");
 				if (puzzleEl !== undefined && puzzleEl !== null) {
-					puzzleEl.style.setProperty("--puzzle-size", "" + pd.size);
+					puzzleEl.style.setProperty("--puzzle-size", "" + pd.columns);
 					puzzleEl.innerHTML = puzzleHtml;
 				}
 			}
