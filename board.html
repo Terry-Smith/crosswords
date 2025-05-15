@@ -613,7 +613,7 @@ testPuzzleDefinition.clues.down = down;
 			
 			this.play = function play() {
 				displayPuzzle(createPuzzleGrid());
-				let titleEl = document.querySelector("div[class='puzzle-title']");
+				let titleEl = document.querySelector("button[class='puzzle-title']");
 				if (titleEl !== undefined && titleEl !== null) {
 					titleEl.innerText = definition.title;
 				}
@@ -740,6 +740,18 @@ testPuzzleDefinition.clues.down = down;
 				}
 			}
 			
+			function getTargetAction(targetEl) {
+				let action;
+				while (targetEl !== undefined && targetEl !== null) {
+					action = targetEl.getAttribute("action");
+					if (action !== undefined && action !== null) {
+						break;
+					}
+					targetEl = targetEl.parentElement;
+				}
+				return {targetEl: targetEl, action: action};
+			}
+			
 			document.addEventListener("keydown", function(e) {
 				let focusEl = document.querySelector("[class~='puzzle-cell-focus']");
 				if (focusEl !== undefined && focusEl !== null) {
@@ -748,9 +760,14 @@ testPuzzleDefinition.clues.down = down;
 						setCell(focusEl, e.key.toUpperCase());
 						moveNextCell();
 					} else if (e.key === " ") {
-						toggleDirection();
-						updateCurrentClue();
-						doDefault = false;
+						let targetEl;
+						let action;
+						({ targetEl: targetEl, action: action } = getTargetAction(e.target));
+						if (action === undefined || action == null) {
+							toggleDirection();
+							updateCurrentClue();
+							doDefault = false;
+						}
 					} else if (e.keyCode === 8) {
 						if (focusEl.innerText === "") {
 							movePreviousCell();
@@ -818,6 +835,64 @@ testPuzzleDefinition.clues.down = down;
 				}
 			});
 			
+			const dlgInitFunctions = {
+				"puzzle-settings-init": function (dialogEl) {
+					if (!dialogEl.inited) {
+						dialogEl.inited = true;
+						dialogEl.updateShowErrorsIcon = function updateShowErrorsIcon(el) {
+							if (el.dataset.propName === "showErrors") {
+								if (crosswordOptions[el.dataset.propName]) {
+									el.parentElement.nextSibling.setAttribute("guess", "waswrong");
+								} else {
+									el.parentElement.nextElementSibling.removeAttribute("guess");
+								}
+							}
+						};
+						dialogEl.addEventListener("click", function(e) {
+							if (e.target.dataset.propName !== undefined && e.target.dataset.propName !== null) {
+								if (e.target.dataset.propName === "showErrors" || e.target.dataset.propName === "skipFilledCells") {
+									crosswordOptions[e.target.dataset.propName] = e.target.checked;
+								} else {
+									crosswordOptions[e.target.dataset.propName] = e.target.value;
+								}
+								saveSettings(crosswordOptions);
+								dialogEl.updateShowErrorsIcon(e.target);
+							}
+						});
+						let checkEl = dialogEl.querySelector("#ShowErrors");
+						checkEl.checked = crosswordOptions.showErrors;
+						dialogEl.updateShowErrorsIcon(checkEl);
+						checkEl = dialogEl.querySelector("#MovementStyle");
+						checkEl.value = crosswordOptions.movementStyle;
+						checkEl = dialogEl.querySelector("#SkipFilled");
+						checkEl.checked = crosswordOptions.skipFilledCells;
+					}
+				},
+
+				"puzzle-info-init": function(dialogEl) {
+					if (!dialogEl.inited) {
+						dialogEl.inited = true;
+						const infoType = ["source", "title", "author", "copyright", "notes", "trustedNotes"];
+						let el;
+						for (const type of infoType) {
+							el = dialogEl.querySelector(`info-${type}`);
+							if (el !== undefined && el !== null) {
+								let text = puzzleDefinition[type];
+								if (text !== undefined && text !== null && text !== "") {
+									if (type === "trustedNotes") {
+										el.innerHTML = text;
+									} else {
+										el.innerText = text;
+									}
+								} else {
+									el.style.display = "none";
+								}
+							}
+						}
+					}
+				}
+			};
+			
 			document.addEventListener("click", function(e) {
 				if (isCell(e.target, puzzleDefinition)) {
 					if (focusInCellEl === e.target) {
@@ -855,49 +930,18 @@ testPuzzleDefinition.clues.down = down;
 						}
 					}
 				} else {
-					let targetEl = e.target;
+					let targetEl;
 					let action;
-					while (targetEl !== undefined && targetEl !== null) {
-						action = targetEl.getAttribute("action");
-						if (action !== undefined && action !== null) {
-							break;
-						}
-						targetEl = targetEl.parentElement;
-					}
+					({ targetEl: targetEl, action: action } = getTargetAction(e.target));
 					if (action !== null && action !== undefined) {
 						let m = /^show-dialog-(?<button>.*)$/.exec(action);
 						if (m !== undefined && m !== null) {
-							let dialogEl = document.querySelector("#"+m.groups["button"]);
+							const dlgName = m.groups["button"];
+							let dialogEl = document.querySelector("#"+dlgName);
 							if (dialogEl !== undefined && dialogEl !== null) {
-								if (!dialogEl.inited) {
-									dialogEl.inited = true;
-									dialogEl.updateShowErrorsIcon = function updateShowErrorsIcon(el) {
-										if (el.dataset.propName === "showErrors") {
-											if (crosswordOptions[el.dataset.propName]) {
-												el.parentElement.nextSibling.setAttribute("guess", "waswrong");
-											} else {
-												el.parentElement.nextElementSibling.removeAttribute("guess");
-											}
-										}
-									};
-									dialogEl.addEventListener("click", function(e) {
-										if (e.target.dataset.propName !== undefined && e.target.dataset.propName !== null) {
-											if (e.target.dataset.propName === "showErrors" || e.target.dataset.propName === "skipFilledCells") {
-												crosswordOptions[e.target.dataset.propName] = e.target.checked;
-											} else {
-												crosswordOptions[e.target.dataset.propName] = e.target.value;
-											}
-											saveSettings(crosswordOptions);
-											dialogEl.updateShowErrorsIcon(e.target);
-										}
-									});
-									let checkEl = dialogEl.querySelector("#ShowErrors");
-									checkEl.checked = crosswordOptions.showErrors;
-									dialogEl.updateShowErrorsIcon(checkEl);
-									checkEl = dialogEl.querySelector("#MovementStyle");
-									checkEl.value = crosswordOptions.movementStyle;
-									checkEl = dialogEl.querySelector("#SkipFilled");
-									checkEl.checked = crosswordOptions.skipFilledCells;
+								const initFn = dlgInitFunctions[dlgName+"-init"];
+								if (initFn !== undefined && initFn !== null) {
+									initFn(dialogEl);
 								}
 								dialogEl.showModal();
 							}
@@ -1107,6 +1151,7 @@ testPuzzleDefinition.clues.down = down;
 	.puzzle-title {
 		position: absolute;
 		display: inline-block;
+		border: none;
 		padding: .25rem;
 		font-size: .7rem;
 		color: #454343;
@@ -1114,18 +1159,51 @@ testPuzzleDefinition.clues.down = down;
 		border-bottom-left-radius: 4px;
 		border-bottom-right-radius: 4px;
 		top: 0;
-		width: max-content;
 		left: 50%;
 		transform: translate(-50%, 0);
 		letter-spacing: .02rem;
+		white-space: nowrap;
+		max-width: 100vw;
+		overflow: hidden;
 	}
 
+	info-source, info-title, info-author, info-copyright, info-notes, info-trustedNotes {
+		display: block;
+		text-align: center;
+		margin-bottom: .25rem;
+	}
+	
+	info-source {
+		font-size: 1.15rem;
+		color:gray;
+	}
+	
+	info-title {
+		font-size: 1.3rem;
+		color: #373030;
+	}
+	
+	info-author {
+		color: gray;
+		font-size: .9rem;
+	}
+	
+	info-copyright {
+		font-size: .7rem;
+		color: gray;
+	}
+	
+	info-notes, info-trustedNotes {
+		margin-top: .5rem;
+		color: gray;
+	}
+	
 	</style>
 </head>
 <body>
 	<div class="grid_layout">
 		<div class="page_header">
-			<div class="puzzle-title" action="show-dialog-puzzle-info" tabIndex="0"></div>
+			<button class="puzzle-title" action="show-dialog-puzzle-info" tabIndex="0"></button>
 			<button class="puzzle-button" action="return-to-puzzle-list">
 				<svg class="" fill="currentColor" aria-hidden="true" width="1em" height="1em" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
 					<path d="M8.73 16.8a.75.75 0 0 0 1.03-1.1l-5.24-4.95h12.73a.75.75 0 0 0 0-1.5H4.52l5.24-4.96A.75.75 0 1 0 8.73 3.2L2.31 9.27a1 1 0 0 0 0 1.46l6.42 6.07Z" fill="currentColor"></path>
@@ -1182,45 +1260,12 @@ testPuzzleDefinition.clues.down = down;
 			<button class="close-btn" action="close-dlg">&times;</button>
 		</div>
 		<hr/>
-		<description>Puzzle Description</description>
-		<author>Puzzle author</author>
-		<copyright>Puzzle copyright</copyright>
+		<info-source></info-source>
+		<info-title></info-title>
+		<info-author></info-author>
+		<info-copyright></info-copyright>
+		<info-notes></info-notes>
+		<info-trustedNotes></info-trustedNotes>
 	</dialog>
 </body>
-
-<!-- body style="perspective: 600px;">
-	<div class="card" style="width: 100%; height: 100%; position:relative;transition: transform 1s; transform-style: preserve-3d">
-		<div class="face" style="position: absolute; backface-visibility: hidden; display: flex; flex-direction: column; align-items: stretch;">
-			<main>
-				<div id="clientArea" class="client-area">
-					<div class="puzzle-header">
-						<button class="puzzle-button" action="return-to-puzzle-list">
-							<svg class="" fill="currentColor" aria-hidden="true" width="1em" height="1em" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-								<path d="M8.73 16.8a.75.75 0 0 0 1.03-1.1l-5.24-4.95h12.73a.75.75 0 0 0 0-1.5H4.52l5.24-4.96A.75.75 0 1 0 8.73 3.2L2.31 9.27a1 1 0 0 0 0 1.46l6.42 6.07Z" fill="currentColor"></path>
-							</svg>
-						</button>
-						<div class="puzzle-clue"></div>
-						<button class="puzzle-button" action="show-dialog-puzzle-settings">&vellip;</button>
-					</div>
-					<div class="puzzle-content">
-						<div class="puzzle-grid"></div>
-					</div>
-				</div>
-			</main>
-			<footer>
-				<div class="puzzle-keyboard-key" key-action="q">q</div><div class="puzzle-keyboard-key" key-action="w">w</div><div class="puzzle-keyboard-key" key-action="e">e</div><div class="puzzle-keyboard-key" key-action="r">r</div><div class="puzzle-keyboard-key" key-action="t">t</div><div class="puzzle-keyboard-key" key-action="y">y</div><div class="puzzle-keyboard-key" key-action="u">u</div><div class="puzzle-keyboard-key" key-action="i">i</div><div class="puzzle-keyboard-key" key-action="o">o</div><div class="puzzle-keyboard-key" key-action="p">p</div>
-				<div class="puzzle-keyboard-key" key-action=""></div><div class="puzzle-keyboard-key" key-action="a">a</div><div class="puzzle-keyboard-key" key-action="s">s</div><div class="puzzle-keyboard-key" key-action="d">d</div><div class="puzzle-keyboard-key" key-action="f">f</div><div class="puzzle-keyboard-key" key-action="g">g</div><div class="puzzle-keyboard-key" key-action="h">h</div><div class="puzzle-keyboard-key" key-action="j">j</div><div class="puzzle-keyboard-key" key-action="k">k</div><div class="puzzle-keyboard-key" key-action="l">l</div>
-				<div class="puzzle-keyboard-key" key-action="_">_</div><div class="puzzle-keyboard-key" key-action="z">z</div><div class="puzzle-keyboard-key" key-action="x">x</div><div class="puzzle-keyboard-key" key-action="c">c</div><div class="puzzle-keyboard-key" key-action="v">v</div><div class="puzzle-keyboard-key" key-action="b">b</div><div class="puzzle-keyboard-key" key-action="n">n</div><div class="puzzle-keyboard-key" key-action="m">m</div><div class="puzzle-keyboard-key" key-action="bs"><img src="backspace.svg" width="24px" height="24px"></div><div class="puzzle-keyboard-key" key-action=""></div>
-			</footer>
-		</div>
-	</div>
-	
-							<button class="puzzle-button" action="show-dialog-puzzle-settings">
-							<svg class="" fill="currentColor" width="1em" height="1em" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-								<path d="M13.85 22.25h-3.7c-.74 0-1.36-.54-1.45-1.27l-.27-1.89c-.27-.14-.53-.29-.79-.46l-1.8.72c-.7.26-1.47-.03-1.81-.65L2.2 15.53c-.35-.66-.2-1.44.36-1.88l1.53-1.19c-.01-.15-.02-.3-.02-.46 0-.15.01-.31.02-.46l-1.52-1.19c-.59-.45-.74-1.26-.37-1.88l1.85-3.19c.34-.62 1.11-.9 1.79-.63l1.81.73c.26-.17.52-.32.78-.46l.27-1.91c.09-.7.71-1.25 1.44-1.25h3.7c.74 0 1.36.54 1.45 1.27l.27 1.89c.27.14.53.29.79.46l1.8-.72c.71-.26 1.48.03 1.82.65l1.84 3.18c.36.66.2 1.44-.36 1.88l-1.52 1.19c.01.15.02.3.02.46s-.01.31-.02.46l1.52 1.19c.56.45.72 1.23.37 1.86l-1.86 3.22c-.34.62-1.11.9-1.8.63l-1.8-.72c-.26.17-.52.32-.78.46l-.27 1.91c-.1.68-.72 1.22-1.46 1.22zm-3.23-2h2.76l.37-2.55.53-.22c.44-.18.88-.44 1.34-.78l.45-.34 2.38.96 1.38-2.4-2.03-1.58.07-.56c.03-.26.06-.51.06-.78s-.03-.53-.06-.78l-.07-.56 2.03-1.58-1.39-2.4-2.39.96-.45-.35c-.42-.32-.87-.58-1.33-.77l-.52-.22-.37-2.55h-2.76l-.37 2.55-.53.21c-.44.19-.88.44-1.34.79l-.45.33-2.38-.95-1.39 2.39 2.03 1.58-.07.56a7 7 0 0 0-.06.79c0 .26.02.53.06.78l.07.56-2.03 1.58 1.38 2.4 2.39-.96.45.35c.43.33.86.58 1.33.77l.53.22.38 2.55z" fill="currentColor"></path>
-									<circle cx="12" cy="12" r="3.5"></circle>
-							</svg>
-						</button>
-						
-</body -->
 </html>
