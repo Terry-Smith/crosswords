@@ -276,6 +276,10 @@
 			align-content: flex-start;
 		}
 		
+		.dlg-row-justify-right {
+			justify-content: flex-end;
+		}
+		
 		.dlg-row select {
 			margin-top: .25rem;
 		}
@@ -463,9 +467,81 @@ testPuzzleDefinition.clues.down = down;
 		let crosswordOptions;
 		let puzzleDefinition;
 		let puzzleState;
-			
+
+		function getTargetAction(targetEl) {
+			let action;
+			while (targetEl !== undefined && targetEl !== null) {
+				action = targetEl.getAttribute("action");
+				if (action !== undefined && action !== null) {
+					break;
+				}
+				targetEl = targetEl.parentElement;
+			}
+			return {targetEl: targetEl, action: action};
+		}
+
+		function padDate(num) {
+			if (num < 10) {
+				return `0${num}`;
+			}
+			return `${num}`;
+		}
+
+		const dlgInitFunctions = {
+			"download-puzzles-init": function(dialogEl) {
+				const dateEl = dialogEl.querySelector("#DownloadDate");
+
+				if (!dialogEl.inited) {
+					dialogEl.inited = true;
+					const downloadBtnEl = dialogEl.querySelector("[action='download-puzzles']");
+					if (downloadBtnEl !== undefined && downloadBtnEl !== null) {
+						downloadBtnEl.addEventListener("click", function(e) {
+							alert("Download " + dateEl.value);
+							dialogEl.close();
+						});
+					}
+				}
+
+				if (dateEl !== undefined && dateEl !== null) {
+					if (dateEl.value === undefined || dateEl.value === null || dateEl.value.trim() === "") {
+						const now = new Date();
+						dateEl.value = `${now.getFullYear()}-${padDate(now.getMonth()+1)}-${padDate(now.getDate())}`;
+					}
+				}
+			}
+		};
+
 		window.addEventListener("load", async function(e) {
-		
+
+			document.addEventListener("click", function(e) {
+				let targetEl;
+				let action;
+				({ targetEl: targetEl, action: action } = getTargetAction(e.target));
+				if (action !== null && action !== undefined) {
+					let m = /^show-dialog-(?<button>.*)$/.exec(action);
+					if (m !== undefined && m !== null) {
+						const dlgName = m.groups["button"];
+						let dialogEl = document.querySelector("#"+dlgName);
+						if (dialogEl !== undefined && dialogEl !== null) {
+							const initFn = dlgInitFunctions[dlgName+"-init"];
+							if (initFn !== undefined && initFn !== null) {
+								initFn(dialogEl);
+							}
+							dialogEl.showModal();
+						}
+					} else if (action === "close-dlg") {
+						let dialogEl = targetEl;
+						while (dialogEl !== undefined && dialogEl !== null) {
+							if (dialogEl.nodeName === "DIALOG") {
+								dialogEl.close();
+								break;
+							}
+							dialogEl = dialogEl.parentElement;
+						}
+					}
+				}
+			});
+
 //debugger;		
 //		const response = await fetch("https://bright-rat-90.deno.dev/?date=2025-04-10");
 //		const data = await response.text();
@@ -561,6 +637,7 @@ testPuzzleDefinition.clues.down = down;
 	}
 
 	.list-item {
+		viewTransitionName: "puzzleTitle";
 		display: flex;
 		align-content: center;
 		align-items: center;
@@ -628,7 +705,7 @@ testPuzzleDefinition.clues.down = down;
 <body>
 	<div class="grid_layout">
 		<div class="page_header">
-			<button class="puzzle-button" action="download-puzzles">
+			<button class="puzzle-button" action="show-dialog-download-puzzles">
 				<svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 					<path d="m0 0h20v20h-20z" fill="currentColor" opacity="0"/>
 					<g fill="currentColor">
@@ -641,7 +718,11 @@ testPuzzleDefinition.clues.down = down;
 				</svg>
 			</button>
 			<div class="puzzle-clue">Puzzles</div>
-			<button class="puzzle-button" action="show-dialog-puzzle-settings">&vellip;</button>
+			<button class="puzzle-button" action="show-dialog-puzzle-settings">
+				<svg class="" fill="currentColor" aria-hidden="true" width="1em" height="1em" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path d="M13.85 22.25h-3.7c-.74 0-1.36-.54-1.45-1.27l-.27-1.89c-.27-.14-.53-.29-.79-.46l-1.8.72c-.7.26-1.47-.03-1.81-.65L2.2 15.53c-.35-.66-.2-1.44.36-1.88l1.53-1.19c-.01-.15-.02-.3-.02-.46 0-.15.01-.31.02-.46l-1.52-1.19c-.59-.45-.74-1.26-.37-1.88l1.85-3.19c.34-.62 1.11-.9 1.79-.63l1.81.73c.26-.17.52-.32.78-.46l.27-1.91c.09-.7.71-1.25 1.44-1.25h3.7c.74 0 1.36.54 1.45 1.27l.27 1.89c.27.14.53.29.79.46l1.8-.72c.71-.26 1.48.03 1.82.65l1.84 3.18c.36.66.2 1.44-.36 1.88l-1.52 1.19c.01.15.02.3.02.46s-.01.31-.02.46l1.52 1.19c.56.45.72 1.23.37 1.86l-1.86 3.22c-.34.62-1.11.9-1.8.63l-1.8-.72c-.26.17-.52.32-.78.46l-.27 1.91c-.1.68-.72 1.22-1.46 1.22zm-3.23-2h2.76l.37-2.55.53-.22c.44-.18.88-.44 1.34-.78l.45-.34 2.38.96 1.38-2.4-2.03-1.58.07-.56c.03-.26.06-.51.06-.78s-.03-.53-.06-.78l-.07-.56 2.03-1.58-1.39-2.4-2.39.96-.45-.35c-.42-.32-.87-.58-1.33-.77l-.52-.22-.37-2.55h-2.76l-.37 2.55-.53.21c-.44.19-.88.44-1.34.79l-.45.33-2.38-.95-1.39 2.39 2.03 1.58-.07.56a7 7 0 0 0-.06.79c0 .26.02.53.06.78l.07.56-2.03 1.58 1.38 2.4 2.39-.96.45.35c.43.33.86.58 1.33.77l.53.22.38 2.55z"></path><circle cx="12" cy="12" r="3.5"></circle>
+				</svg>
+			</button>
 		</div>
 		<div class="page_content">
 			<ul class="puzzle-list">
@@ -668,11 +749,25 @@ testPuzzleDefinition.clues.down = down;
 		</div>
 	</div>
 
+	<dialog id="download-puzzles">
+		<div class="dlg-title">
+			<h1>Download</h1>
+			<button class="close-btn" action="close-dlg">&times;</button>
+		</div>
+		<div class="dlg-row dlg-row-justify-left">
+			<label for="DownloadDate">Select date</label>
+			<input name="downloadDate" id="DownloadDate" data-prop-name="downloadDate" type="date" >
+			<div class="dlg-row-description">Select the date for which to download puzzles.</div>
+		</div>
+		<div class="dlg-row dlg-row-justify-right">
+			<button class="" action="download-puzzles">Dowload puzzles</button>
+		</div>
+	</dialog>
 
 	<dialog id="puzzle-settings">
 		<div class="dlg-title">
 			<h1>Settings</h1>
-			<button class="close-btn">&times;</button>
+			<button class="close-btn" action="close-dlg">&times;</button>
 		</div>
 		<div class="dlg-row dlg-row-justify-left">
 			<div class="dlg-row dlg-row-space-between">
@@ -694,10 +789,6 @@ testPuzzleDefinition.clues.down = down;
 			</select>
 			<div class="dlg-row-description">Select what happens when you type past the end of a word.</div>
 		</div>
-		<hr/>
-		<description>Puzzle Description</description>
-		<author>Puzzle author</author>
-		<copyright>Puzzle copyright</copyright>
 	</dialog>
 
 
