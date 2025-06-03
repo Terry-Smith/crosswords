@@ -487,10 +487,35 @@ testPuzzleDefinition.clues.down = down;
 			return `${num}`;
 		}
 
+		const dateFormat = new Intl.DateTimeFormat(undefined,{weekday: "short", month: "short", day: "numeric"});
+		
 		const dlgInitFunctions = {
 			"download-puzzles-init": function(dialogEl) {
 				const dateEl = dialogEl.querySelector("#DownloadDate");
-
+				const dateBannerEl = dialogEl.querySelector("[class~='date-banner']");
+				const dateBannerDateEl = dialogEl.querySelector("[class~='date-banner-date']");
+				const dateBannerYearEl = dialogEl.querySelector("[class~='date-banner-year']");
+				
+				function updateDateBanner() {
+					if (dateEl !== undefined && dateEl !== null) {
+						let selectedDate;
+						if (dateEl.value === undefined || dateEl.value === null || dateEl.value.trim() === "") {
+							selectedDate = new Date();
+							dateEl.value = `${selectedDate.getFullYear()}-${padDate(selectedDate.getMonth()+1)}-${padDate(selectedDate.getDate())}`;
+						} else {
+							selectedDate = new Date(dateEl.value + " 00:00:00");
+						}
+						
+						if (dateBannerDateEl !== undefined && dateBannerDateEl !== null) {
+							// Need a time with the date to get the correct time zone.
+							dateBannerDateEl.innerText = dateFormat.format(selectedDate);
+						}
+						if (dateBannerYearEl !== undefined && dateBannerYearEl !== null) {
+							dateBannerYearEl.innerText = selectedDate.getFullYear();
+						}
+					}
+				}
+				
 				if (!dialogEl.inited) {
 					dialogEl.inited = true;
 					const downloadBtnEl = dialogEl.querySelector("[action='download-puzzles']");
@@ -500,14 +525,16 @@ testPuzzleDefinition.clues.down = down;
 							dialogEl.close();
 						});
 					}
+					dateEl.addEventListener("change", function(e) {
+						updateDateBanner();
+					});
+					
+					dateBannerEl.addEventListener("click", function(e) {
+						dateEl.showPicker();
+					});					
 				}
 
-				if (dateEl !== undefined && dateEl !== null) {
-					if (dateEl.value === undefined || dateEl.value === null || dateEl.value.trim() === "") {
-						const now = new Date();
-						dateEl.value = `${now.getFullYear()}-${padDate(now.getMonth()+1)}-${padDate(now.getDate())}`;
-					}
-				}
+				updateDateBanner();
 			}
 		};
 
@@ -700,6 +727,26 @@ testPuzzleDefinition.clues.down = down;
 		color: #bebebe;
 		display: none;
 	}
+	
+	#DownloadDate {
+		font-size: 1rem;
+		visibility: hidden;
+		margin-top: -2rem;
+	}
+	
+	.date-banner {
+		font-size: 1.75rem;
+		padding: .75rem;
+		background-color: #88511D;
+		color: #ffffff;
+		margin-bottom: 0.5rem;
+		width: 14rem;
+	}
+	
+	.date-banner-year {
+		font-size: 1rem;
+		margin-bottom: 0.10rem;
+	}
 	</style>
 </head>
 <body>
@@ -755,9 +802,12 @@ testPuzzleDefinition.clues.down = down;
 			<button class="close-btn" action="close-dlg">&times;</button>
 		</div>
 		<div class="dlg-row dlg-row-justify-left">
-			<label for="DownloadDate">Select date</label>
+			<div class="date-banner">
+				<div class="date-banner-year"></div>
+				<div class="date-banner-date"></div>
+			</div>
 			<input name="downloadDate" id="DownloadDate" data-prop-name="downloadDate" type="date" >
-			<div class="dlg-row-description">Select the date for which to download puzzles.</div>
+			<div class="dlg-row-description">Download puzzles for the selected date.</div>
 		</div>
 		<div class="dlg-row dlg-row-justify-right">
 			<button class="" action="download-puzzles">Dowload puzzles</button>
