@@ -349,6 +349,14 @@
 			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.description]);
 		}
 		
+		async function getPuzzles() {
+			const tx = crosswordsDb.transaction("puzzles");
+	
+			for await (const cursor of tx.store) {
+				console.log(cursor.value);
+			}
+		}
+		
 		let defaultCrosswordOptions = {
 			id: "me",
 			showErrors: false,
@@ -358,108 +366,7 @@
 			puzzleScale: 1
 		};
 
-//		testPuzzleCellContent = "SUSHI#SAPS#OPALASHEN#PLIE#VERYWEIRDPRESCIENCEURIS#AIR#SLR###PIT#PINON#LAPEL#DECENT#CBSNEWS###HEF#AAA#DRED#THEPREFABFOUR#ASEA#ELL#YOU###SAMPLES#ABATED#PRILE#EPSOM#XED###ANT#USO#SCARVICTORPREMATUREERIE#EDEN#OASISTAGS#STET#KNEES";
-		let testPuzzleCellContent = "LURED#ASKS#CARPERODE#FLIT#ALOEISAAC#TIER#BELT#ARMOREDVEHICLE####RARE#SUN###AFLOAT##USE#WITBLOAT#FETE#DICEBUFFEREDASPIRINETAS#OATH#EVENSYET#FUR##ONEDGE###ION#ETNA####PADDEDENVELOPE#OBOE#OUTS#IRATEELLA#FREE#ZESTYTELL#FORT#ESTEE"
-		let testPuzzleDefinition = {
-			date: 1741563461393,
-			source: "Terry Store",
-			description: "Test crossword puzzle I copied from somewhere.",
-			author: "Author is unknown",
-			copyright: "© The author owns the copyright.",
-			size: 15,
-			cells: Array.from(testPuzzleCellContent),
-			clues: {
-				across: [],
-				down: []
-			}
-		};
-let across = [];
-across[1] = "Tempted";
-across[6] = "Makes an inquiry";
-across[10] = "Complain constantly";
-across[14] = "Wear away";
-across[15] = "Fly like a butterfly";
-across[16] = "Burn-soothing plant";
-across[17] = "Sir ___ Newton";
-across[18] = "Wedding cake layer";
-across[19] = "Slacks-loop insert";
-across[20] = "Military tank, for example";
-across[23] = "Seldom seen";
-across[24] = "It rises at dawn";
-across[25] = "On top of the water";
-across[29] = "Find a purpose for";
-across[30] = "Clever humor";
-across[33] = "Cause to swell up";
-across[34] = "Elaborate party";
-across[36] = "Board game cubes";
-across[37] = "Pain reliever with an antacid coating";
-across[40] = "When planes are expected: Abbr.";
-across[41] = "Solemn vow";
-across[42] = "Makes level";
-across[43] = "So far";
-across[44] = "Dog's hair";
-across[45] = "Feeling anxious";
-across[46] = "Charged atom";
-across[47] = "Volcano in Sicily";
-across[49] = "Mailer for breakable items";
-across[56] = "Woodwind instrument";
-across[57] = "Ins and ___ (important details)";
-across[58] = "Very angry";
-across[60] = "Jazz singer Fitzgerald";
-across[61] = "At no charge";
-across[62] = "Spicy-tasting";
-across[63] = "Narrate";
-across[64] = "Military outpost";
-across[65] = "Lauder of cosmetics";
-
-let down = [];
-down[1] = "Hawaiian necklace";
-down[2] = "___ Major (Big Dipper constellation)";
-down[3] = "Lion's bellow";
-down[4] = "Dutch cheese";
-down[5] = "Adorn";
-down[6] = "...happily every ___";
-down[7] = "Playground chute";
-down[8] = "Former spelling or Ukraine's capital";
-down[9] = "Emphasizes";
-down[10] = "Home made of logs";
-down[11] = "Actor Baldwin";
-down[12] = "Bagel or bun";
-down[13] = "St. ___ (city near Tampa)";
-down[21] = "Lab maze runner";
-down[22] = "Nuance of color";
-down[25] = "Home for monks";
-down[26] = "High-pitched woodwind";
-down[27] = "Lite, on food labels";
-down[28] = "Clumsy people";
-down[29] = "Salt Lake's state";
-down[30] = "Did electrical work";
-down[31] = "Cupcake topper";
-down[32] = "Feeling anxious";
-down[34] = "Be worried about";
-down[35] = "Summer hrs. in DC";
-down[36] = "Jump into a pool";
-down[38] = "Approximate 92.3 with 90, say";
-down[39] = "Impose a punishment on";
-down[44] = "Enemy";
-down[45] = "Smallest till bill";
-down[46] = "Best possible";
-down[47] = "Come in!";
-down[48] = "Sports bar screen";
-down[49] = "Verse writer";
-down[50] = "Equal to a task";
-down[51] = "Barbie or Ken";
-down[52] = "Money in Italy and Germany";
-down[53] = "Rocks that are mined";
-down[54] = "In the ___ (before now)";
-down[55] = "\"Small\" suffix for kitchen";
-down[59] = "Hurricane's center";
-
-testPuzzleDefinition.clues.across = across;
-testPuzzleDefinition.clues.down = down;
-
 		let currentPuzzle;
-		let allPuzzleDefinitions = [testPuzzleDefinition];
 		let defaultPuzzleState = {
 			direction: "across", // across or down
 			currentCellIndex: 0
@@ -520,8 +427,25 @@ testPuzzleDefinition.clues.down = down;
 					dialogEl.inited = true;
 					const downloadBtnEl = dialogEl.querySelector("[action='download-puzzles']");
 					if (downloadBtnEl !== undefined && downloadBtnEl !== null) {
-						downloadBtnEl.addEventListener("click", function(e) {
-							alert("Download " + dateEl.value);
+						downloadBtnEl.addEventListener("click", async function(e) {
+							const response = await fetch(`https://bright-rat-90.deno.dev/?date=${dateEl.value}`);
+							if (response.ok) {
+								const jsonData = await response.json();
+								
+								for (const puz of jsonData) {
+									if (puz.success) {
+										await crosswordsDb.put("puzzles", puz.data);
+									} else {
+										console.log(`There was a problem downloading a puzzle: ${puz.message}`);
+									}
+								}
+								
+//		async function getState(pd) {
+//			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.title]);
+
+								console.log(jsonData);
+							}
+
 							dialogEl.close();
 						});
 					}
@@ -569,12 +493,10 @@ testPuzzleDefinition.clues.down = down;
 				}
 			});
 
-//debugger;		
-//		const response = await fetch("https://bright-rat-90.deno.dev/?date=2025-04-10");
-//		const data = await response.text();
-		
-		
 			await initCrosswordsDb();
+			
+			let allPuzzleDefinitions = await getPuzzles();
+			
 			crosswordOptions = await crosswordsDb.get("settings", "me");
 			if (crosswordOptions === undefined || crosswordOptions === null) {
 				crosswordOptions = structuredClone(defaultCrosswordOptions);
