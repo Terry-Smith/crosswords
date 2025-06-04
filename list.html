@@ -350,11 +350,13 @@
 		}
 		
 		async function getPuzzles() {
+			const puzzles = [];
 			const tx = crosswordsDb.transaction("puzzles");
-	
 			for await (const cursor of tx.store) {
 				console.log(cursor.value);
+				puzzles.push(cursor.value);
 			}
+			return puzzles;
 		}
 		
 		let defaultCrosswordOptions = {
@@ -394,8 +396,31 @@
 			return `${num}`;
 		}
 
-		const dateFormat = new Intl.DateTimeFormat(undefined,{weekday: "short", month: "short", day: "numeric"});
+		function formatGroupHeader(data) {
+			return `<li class="group-header" data-group-value="${data.date}">
+	<div>${data.dateFormatted}</div>
+</li>`;
+		}
 		
+		function formatListEntry () {
+			return `<li class="list-item" data-date="${date}" data-source="${source}" data-title="${title}">
+	<div class="list-prefix list-prefix-layer circle"></div>
+	<div class="list-prefix list-prefix-layer circle arc" data-percent-complete="${percentComplete}"></div>
+	<div class="list-prefix">
+		${listPrefix}
+	</div>
+	<div class="list-data">
+		<div>
+			<div class="source">${source}</div>
+			<div class="description">${title}</div>
+			<div class="note">${trustedNotes}</div>
+		</div>
+	</div>
+</li>`;
+		}
+
+		const pickerDateFormat = new Intl.DateTimeFormat(undefined,{weekday: "short", month: "short", day: "numeric"});
+
 		const dlgInitFunctions = {
 			"download-puzzles-init": function(dialogEl) {
 				const dateEl = dialogEl.querySelector("#DownloadDate");
@@ -415,7 +440,7 @@
 						
 						if (dateBannerDateEl !== undefined && dateBannerDateEl !== null) {
 							// Need a time with the date to get the correct time zone.
-							dateBannerDateEl.innerText = dateFormat.format(selectedDate);
+							dateBannerDateEl.innerText = pickerDateFormat.format(selectedDate);
 						}
 						if (dateBannerYearEl !== undefined && dateBannerYearEl !== null) {
 							dateBannerYearEl.innerText = selectedDate.getFullYear();
@@ -439,11 +464,6 @@
 										console.log(`There was a problem downloading a puzzle: ${puz.message}`);
 									}
 								}
-								
-//		async function getState(pd) {
-//			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.title]);
-
-								console.log(jsonData);
 							}
 
 							dialogEl.close();
@@ -497,6 +517,37 @@
 			
 			let allPuzzleDefinitions = await getPuzzles();
 			
+			const groupDateFormat = new Intl.DateTimeFormat(undefined,{weekday: "short", month: "short", day: "numeric", year: "numeric"});
+			function formatGroupDate (date) {
+				let formattedDate = "";
+				const parts = groupDateFormat.formatToParts(date);
+				let previousPartType = "";
+				for (const part of parts) {
+					let val = part.value;
+					if (part.type === "literal" && previousPartType == "weekday") {
+						val = " ";
+					} 
+					previousPartType = part.type;
+					formattedDate = formattedDate + val;
+				}
+				return formattedDate;
+			}
+			
+			let html;
+			let curDate = "";
+			for (const puz of allPuzzleDefinitions) {
+				html = "";
+				if (curDate != puz.date) {
+					curDate = puz.date;
+					const groupDate = new Date(puz.date + " 00:00:00");
+					html = formatGroupHeader({date: curDate, dateFormatted: formatGroupDate(groupDate)});
+				}
+				
+				
+				//		async function getState(pd) {
+				//			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.title]);
+			}
+			
 			crosswordOptions = await crosswordsDb.get("settings", "me");
 			if (crosswordOptions === undefined || crosswordOptions === null) {
 				crosswordOptions = structuredClone(defaultCrosswordOptions);
@@ -507,7 +558,6 @@
 					crosswordOptions.advanceToNextClueAtEndOfWord = undefined;
 				}
 			}
-			//loadPuzzleList();
 		});
 			
 		</script>
@@ -663,6 +713,16 @@
 		color: #ffffff;
 		margin-bottom: 0.5rem;
 		width: 14rem;
+	}
+	
+	.date-banner:active {
+		padding-top: calc(.75rem + 2px);
+		padding-left: calc(.75rem + 2px);
+		padding-right: calc(.75rem - 2px);
+		padding-bottom: calc(.75rem - 2px);
+	}
+	
+	.date-banner:hover {
 	}
 	
 	.date-banner-year {
