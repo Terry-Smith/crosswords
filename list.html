@@ -317,6 +317,18 @@
 
 	<script src="https://cdn.jsdelivr.net/npm/idb@8/build/umd.js"></script>
 	<script>
+		function htmlEncode(text) {
+			if (text !== undefined && text !== null && typeof text === "string") {
+				return text.replace(/&/g, "&amp;")
+						   .replace(/</g, "&lt;")
+						   .replace(/>/g, "&gt;")
+						   .replace(/"/g, "&quot;")
+						   .replace(/'/g, "&#39;");
+			} else {
+				return text;
+			}
+		}
+
 		let crosswordsDb;
 		async function initCrosswordsDb() {
 			crosswordsDb = await idb.openDB("crosswords", 1, {
@@ -353,7 +365,6 @@
 			const puzzles = [];
 			const tx = crosswordsDb.transaction("puzzles");
 			for await (const cursor of tx.store) {
-				console.log(cursor.value);
 				puzzles.push(cursor.value);
 			}
 			return puzzles;
@@ -407,20 +418,23 @@
 			let prefixColor = "--gray-color";
 			let layer1Css = "";
 			let layer2Css = "";
+			let complete = "";
 			if (data.percentComplete > 0) {
 				listPrefix = `${data.percentComplete}%`;
 				layer1Css = " circle";
 				layer2Css = " circle arc";
 				if (data.percentComplete === 100) {
+					listPrefix = "&#x2714;"
 					prefixColor = "--green-color";
+					complete = "complete";
 				} else {
 					prefixColor = "--mustard-color";
 				}
 			}
-			return `<li class="list-item" data-date="${data.date}" data-source="${data.source}" data-title="${data.title}" style="--prefix-color: var(${prefixColor})">
+			return `<li class="list-item" data-date="${htmlEncode(data.date)}" data-source="${htmlEncode(data.source)}" data-title="${htmlEncode(data.title)}" style="--prefix-color: var(${prefixColor})" tabindex="0" action="playPuzzle">
 	<div class="list-prefix list-prefix-layer${layer1Css}"></div>
 	<div class="list-prefix list-prefix-layer${layer2Css}" style="--degrees: ${((data.percentComplete / 100.0).toFixed(2))*360}deg;"></div>
-	<div class="list-prefix">
+	<div class="list-prefix"${complete}>
 		${listPrefix}
 	</div>
 	<div class="list-data">
@@ -523,6 +537,14 @@
 							}
 							dialogEl = dialogEl.parentElement;
 						}
+					} else if (action === "playPuzzle") {
+						const puzzleKey = {
+							date: targetEl.dataset.date,
+							source: targetEl.dataset.source,
+							title: targetEl.dataset.title
+						}
+						sessionStorage.setItem("puzzleKey", JSON.stringify(puzzleKey));
+						window.location.href = "board.html";
 					}
 				}
 			});
@@ -679,12 +701,16 @@ if (el !== undefined && el !== null) {
 	}
 
 	.list-item {
-		viewTransitionName: "puzzleTitle";
+		view-transition-name: puzzleTitle;
 		display: flex;
 		align-content: center;
 		align-items: center;
 		padding-top: .25rem;
 		padding-bottom: .25rem;
+	}
+	
+	.list-item:hover {
+		background-color: #f3f3f3;
 	}
 	
 	.list-prefix {
@@ -696,6 +722,10 @@ if (el !== undefined && el !== null) {
 		justify-content: center;
 		margin-left: 0.5rem;
 		margin-right: 0.5rem;
+	}
+	
+	.list-prefix[complete] {
+		font-size: 1.5rem;
 	}
 	
 	.list-prefix-layer {
@@ -783,7 +813,7 @@ if (el !== undefined && el !== null) {
 	<div class="grid_layout">
 		<div class="page_header">
 			<button class="puzzle-button" action="show-dialog-download-puzzles">
-				<svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+				<svg viewBox="2 2 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 					<path d="m0 0h20v20h-20z" fill="currentColor" opacity="0"/>
 					<g fill="currentColor">
 						<rect height="2" rx="1" width="16" x="4" y="18"/>
@@ -803,25 +833,6 @@ if (el !== undefined && el !== null) {
 		</div>
 		<div class="page_content">
 			<ul class="puzzle-list">
-				<li class="group-header">
-					<div>Sat Mar 01, 2025</div>
-				</li>
-				<li class="list-item">
-					<div class="list-prefix list-prefix-layer circle">
-					</div>
-					<div class="list-prefix list-prefix-layer circle arc" style="--degrees: calc(.17 * 360deg);">
-					</div>
-					<div class="list-prefix">
-						17%
-					</div>
-					<div class="list-data">
-						<div>
-							<div class="source">Newsday</div>
-							<div class="description">SATURDAY STUMPER</div>
-							<div class="note">Visit <a href="https://www.brendanemmettquigley.com/">https://www.brendanemmettquigley.com/</a></div>
-						</div>
-					</div>
-				</li>
 			</ul>
 		</div>
 	</div>
