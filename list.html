@@ -346,7 +346,7 @@
 		}
 
 		async function getState(pd) {
-			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.description]);
+			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.title]);
 		}
 		
 		async function getPuzzles() {
@@ -402,18 +402,32 @@
 </li>`;
 		}
 		
-		function formatListEntry () {
-			return `<li class="list-item" data-date="${date}" data-source="${source}" data-title="${title}">
-	<div class="list-prefix list-prefix-layer circle"></div>
-	<div class="list-prefix list-prefix-layer circle arc" data-percent-complete="${percentComplete}"></div>
+		function formatListEntry (data) {
+			let listPrefix = "&#9654;";
+			let prefixColor = "--gray-color";
+			let layer1Css = "";
+			let layer2Css = "";
+			if (data.percentComplete > 0) {
+				listPrefix = `${data.percentComplete}%`;
+				layer1Css = " circle";
+				layer2Css = " circle arc";
+				if (data.percentComplete === 100) {
+					prefixColor = "--green-color";
+				} else {
+					prefixColor = "--mustard-color";
+				}
+			}
+			return `<li class="list-item" data-date="${data.date}" data-source="${data.source}" data-title="${data.title}" style="--prefix-color: var(${prefixColor})">
+	<div class="list-prefix list-prefix-layer${layer1Css}"></div>
+	<div class="list-prefix list-prefix-layer${layer2Css}" style="--degrees: ${((data.percentComplete / 100.0).toFixed(2))*360}deg;"></div>
 	<div class="list-prefix">
 		${listPrefix}
 	</div>
 	<div class="list-data">
 		<div>
-			<div class="source">${source}</div>
-			<div class="description">${title}</div>
-			<div class="note">${trustedNotes}</div>
+			<div class="source">${data.source}</div>
+			<div class="description">${data.title}</div>
+			<div class="note">${data.trustedNotes}</div>
 		</div>
 	</div>
 </li>`;
@@ -533,20 +547,49 @@
 				return formattedDate;
 			}
 			
-			let html;
+			function computePercentComplete(guesses, answers) {
+				let total = 0;
+				let correct = 0;
+				for (let i = 0; i < guesses.length; i++) {
+					if (answers[i] !== "#") {
+						total++;
+						if (answers[i] === guesses[i].letter) {
+							correct++;
+						}
+					}
+				}
+				return Math.ceil((correct / total) * 100.0);
+			}
+			
+			let html = "";
 			let curDate = "";
 			for (const puz of allPuzzleDefinitions) {
-				html = "";
 				if (curDate != puz.date) {
 					curDate = puz.date;
 					const groupDate = new Date(puz.date + " 00:00:00");
-					html = formatGroupHeader({date: curDate, dateFormatted: formatGroupDate(groupDate)});
+					html = html + formatGroupHeader({date: curDate, dateFormatted: formatGroupDate(groupDate)});
 				}
 				
-				
-				//		async function getState(pd) {
-				//			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.title]);
+				const ps = await getState(puz);
+				let percentComplete = 0;
+				if (ps !== undefined && ps !== null) {
+					percentComplete = computePercentComplete(ps.cellGuesses, puz.cellContent);
+				}
+
+				const data = {
+					percentComplete: percentComplete,
+					date: puz.date,
+					source: puz.source,
+					title: puz.title,
+					trustedNotes: puz.trustedNotes
+				}
+
+				html = html + formatListEntry(data);
 			}
+let el = document.querySelector("ul[class='puzzle-list']");
+if (el !== undefined && el !== null) {
+	el.innerHTML = html;
+}
 			
 			crosswordOptions = await crosswordsDb.get("settings", "me");
 			if (crosswordOptions === undefined || crosswordOptions === null) {
@@ -565,8 +608,8 @@
 	<style>
 	:root {
 		--mustard-color: #CDA73D;
-		--gray-text-color: #B4B4B4;
-		--green-text-color: #4E8F5F;
+		--gray-color: #B4B4B4;
+		--green-color: #4E8F5F;
 	}
 
 	html {
@@ -645,9 +688,8 @@
 	}
 	
 	.list-prefix {
-		--text-color: var(--mustard-color);
 		display: inline-flex;
-		color: var(--text-color);
+		color: var(--prefix-color);
 		height: 4rem;
 		width: 4rem;
 		align-items: center;
@@ -665,17 +707,23 @@
 		padding: 3px;
 		box-sizing: border-box;
 		border-radius: 50%;
-		background: var(--mustard-color);
+		background: var(--prefix-color);
 		mask:
 			linear-gradient(#0000 0 0) content-box intersect,
 			conic-gradient(#000 360deg,#0000 0);
 	}
 	
+	@property --degrees {
+		syntax: "<angle>";
+		inherits: false;
+		initial-value: 0deg;
+	}
+	
 	.arc {
-		padding: 9px; /* the boder thickness */
+		padding: 9px; /* the border thickness */
 		mask:
 			linear-gradient(#0000 0 0) content-box intersect,
-			conic-gradient(#000 calc(.17 * 360deg),#0000 0);
+			conic-gradient(#000 var(--degrees),#0000 0);
 	}
 
 	.list-data {
@@ -761,7 +809,7 @@
 				<li class="list-item">
 					<div class="list-prefix list-prefix-layer circle">
 					</div>
-					<div class="list-prefix list-prefix-layer circle arc">
+					<div class="list-prefix list-prefix-layer circle arc" style="--degrees: calc(.17 * 360deg);">
 					</div>
 					<div class="list-prefix">
 						17%
