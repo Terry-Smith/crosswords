@@ -663,6 +663,19 @@
 								}
 								saveSettings(crosswordOptions);
 								dialogEl.updateShowErrorsIcon(e.target);
+								
+								// Show errors for non-empty cells.
+								if (e.target.dataset.propName === "showErrors" && crosswordOptions.showErrors) {
+									for (let i = 0; i < pd.cells.length; i++) {
+										if (ps.cellGuesses[i].letter !== "" && pd.cells[i] !== ps.cellGuesses[i].letter) {
+											ps.cellGuesses[i].type = "wrong";
+											const cellEl = document.querySelector(`[cellindex="${i}"]`);
+											if (cellEl !== undefined && cellEl !== null) {
+												cellEl.setAttribute("guess", "wrong");
+											}
+										}
+									}
+								}
 							}
 						});
 						let checkEl = dialogEl.querySelector("#ShowErrors");

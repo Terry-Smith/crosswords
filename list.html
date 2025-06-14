@@ -366,6 +366,10 @@
 			return puzzles;
 		}
 		
+		async function getPuzzle(puzzleKey) {
+			return await crosswordsDb.get("puzzles", [puzzleKey.date, puzzleKey.source, puzzleKey.title]);
+		}
+
 		let defaultCrosswordOptions = {
 			id: "me",
 			showErrors: false,
@@ -427,7 +431,7 @@
 					prefixColor = "--mustard-color";
 				}
 			}
-			return `<li class="list-item" data-date="${htmlEncode(data.date)}" data-source="${htmlEncode(data.source)}" data-title="${htmlEncode(data.title)}" style="--prefix-color: var(${prefixColor})" tabindex="0" action="playPuzzle">
+			return `<li class="list-item" data-date="${htmlEncode(data.date)}" data-source="${htmlEncode(data.source)}" data-title="${htmlEncode(data.title)}" style="--prefix-color: var(${prefixColor})" tabindex="0" action="playPuzzle" ${data?.selected ? "selected":""}>
 	<div class="list-prefix list-prefix-layer${layer1Css}"></div>
 	<div class="list-prefix list-prefix-layer${layer2Css}" style="--degrees: ${((data.percentComplete / 100.0).toFixed(2))*360}deg;"></div>
 	<div class="list-prefix"${complete}>
@@ -506,6 +510,14 @@
 			}
 		};
 
+		function selectListItem(listItemEl) {
+			const selEl = listItemEl.parentElement.querySelector("li[selected]");
+			if (selEl !== undefined && selEl !== null && selEl !== listItemEl) {
+				selEl.removeAttribute("selected");
+			}
+			listItemEl.setAttribute("selected", "");
+		}
+
 		window.addEventListener("load", async function(e) {
 
 			document.addEventListener("click", function(e) {
@@ -534,6 +546,7 @@
 							dialogEl = dialogEl.parentElement;
 						}
 					} else if (action === "playPuzzle") {
+						selectListItem(targetEl);
 						const puzzleKey = {
 							date: targetEl.dataset.date,
 							source: targetEl.dataset.source,
@@ -583,7 +596,13 @@
 						}
 					}
 				}
-				return Math.ceil((correct / total) * 100.0);
+				return Math.floor((correct / total) * 100.0);
+			}
+			
+			let puzzleKey;
+			const puzzleKeyJson = sessionStorage.getItem("puzzleKey");
+			if (puzzleKeyJson !== null) {
+				puzzleKey = JSON.parse(puzzleKeyJson);
 			}
 			
 			let html = "";
@@ -606,15 +625,17 @@
 					date: puz.date,
 					source: puz.source,
 					title: puz.title,
-					trustedNotes: puz.trustedNotes
+					trustedNotes: puz.trustedNotes,
+					selected: (puzzleKey?.date === puz.date && puzzleKey?.source === puz.source && puzzleKey?.title === puz.title)
 				}
 
 				html = html + formatListEntry(data);
 			}
-let el = document.querySelector("ul[class='puzzle-list']");
-if (el !== undefined && el !== null) {
-	el.innerHTML = html;
-}
+
+			let el = document.querySelector("ul[class='puzzle-list']");
+			if (el !== undefined && el !== null) {
+				el.innerHTML = html;
+			}
 			
 			crosswordOptions = await crosswordsDb.get("settings", "me");
 			if (crosswordOptions === undefined || crosswordOptions === null) {
@@ -627,7 +648,39 @@ if (el !== undefined && el !== null) {
 				}
 			}
 		});
-			
+		
+		async function updateCurrentListItem() {
+			const puzzleKeyJson = sessionStorage.getItem("puzzleKey");
+			if (puzzleKeyJson !== null) {
+				const puzzleKey = JSON.parse(puzzleKeyJson);
+				
+				const el = document.querySelector(`li[class="list-item"][data-date="${puzzleKey.date}"][data-source="${puzzleKey.source}"][data-title="${puzzleKey.title}"]`);
+				if (el !== undefined && el !== null) {
+					const puzzleDefinition = await getPuzzle(puzzleKey);
+					
+					const ps = await getState(puzzleDefinition);
+					let percentComplete = 0;
+					if (ps !== undefined && ps !== null) {
+						percentComplete = computePercentComplete(ps.cellGuesses, puzzleDefinition.cellContent);
+					}
+
+					const data = {
+						percentComplete: percentComplete,
+						date: puzzleDefinition.date,
+						source: puzzleDefinition.source,
+						title: puzzleDefinition.title,
+						trustedNotes: puzzleDefinition.trustedNotes
+					}
+					const html = formatListEntry(data);
+					el.innerHTML = html;
+					
+					selectListItem(el);
+				}
+			}
+		}
+		
+		window.addEventListener("pageshow", updateCurrentListItem);
+		
 		</script>
 
 	<style>
@@ -705,12 +758,19 @@ if (el !== undefined && el !== null) {
 	}
 
 	.list-item {
-		view-transition-name: puzzleTitle;
+/*		view-transition-name: puzzleTitle;*/
 		display: flex;
 		align-content: center;
 		align-items: center;
 		padding-top: .75rem;
 		padding-bottom: .75rem;
+		border-left-width: .2rem;
+		border-left-style: solid;
+		border-left-color: transparent;	
+	}
+	
+	.list-item[selected] {
+		border-left-color: green;
 	}
 	
 	.list-item:hover {
