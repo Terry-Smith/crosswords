@@ -711,7 +711,45 @@
 					}
 				}
 			};
+
+			let longpressTimer = 0;
+			function endLongPress() {
+				if (longpressTimer !== 0) {
+					clearTimeout(longpressTimer);
+					longpressTimer = 0;
+				}
+			}
+
+			function startLongPress(targetEl) {
+				endLongPress();
+				longpressTimer = setTimeout(function(cellEl) {
+					const popoverEl = document.querySelector("#revealpopover");
+					if (popoverEl !== undefined && popoverEl !== null) {
+						popoverEl.showPopover({source: cellEl});
+					}
+				}, 1000, targetEl);
+			}
+
+			document.addEventListener("mousedown", function(e) {
+				if (isCell(e.target, puzzleDefinition)) {
+					startLongPress(e.target);
+				}
+			});
 			
+			document.addEventListener("mouseup", function(e) {
+				endLongPress();
+			});
+
+			document.addEventListener("touchstart", function(e) {
+				if (isCell(e.target, puzzleDefinition)) {
+					startLongPress(e.target);
+				}
+			});
+			
+			document.addEventListener("touchend", function(e) {
+				endLongPress();
+			});
+
 			document.addEventListener("click", function(e) {
 				if (isCell(e.target, puzzleDefinition)) {
 					if (focusInCellEl === e.target) {
@@ -1089,5 +1127,13 @@
 		<info-notes></info-notes>
 		<info-trustedNotes></info-trustedNotes>
 	</dialog>
+	
+	<div id="revealpopover" popover>
+      <ul>
+        <li action="revealLetter">Reveal letter</li>
+        <li action="revealWord">Reveal word</li>
+        <li action="revealPuzzle">Reveal puzzle</li>
+      </ul>
+    </div>
 </body>
 </html>
