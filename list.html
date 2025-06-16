@@ -654,7 +654,7 @@
 			if (puzzleKeyJson !== null) {
 				const puzzleKey = JSON.parse(puzzleKeyJson);
 				
-				const el = document.querySelector(`li[class="list-item"][data-date="${puzzleKey.date}"][data-source="${puzzleKey.source}"][data-title="${puzzleKey.title}"]`);
+				const el = document.querySelector(`li[class="list-item"][data-date="${puzzleKey.date}"][data-source="${puzzleKey.source}"][data-title="${puzzleKey.title.replaceAll("\"", "\\\"")}"]`);
 				if (el !== undefined && el !== null) {
 					const puzzleDefinition = await getPuzzle(puzzleKey);
 					
