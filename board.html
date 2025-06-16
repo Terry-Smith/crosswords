@@ -310,7 +310,7 @@
 		.checkbox-label > input {
 			margin-right: 0.5rem;
 		}
-
+		
 	</style>
 
 	<script src="https://cdn.jsdelivr.net/npm/idb@8/build/umd.js"></script>
@@ -562,41 +562,47 @@
 				let focusEl = document.querySelector("[class~='puzzle-cell-focus']");
 				if (focusEl !== undefined && focusEl !== null) {
 					let doDefault = true;
-					if (/^[a-z]$/i.test(e.key)) {
-						setCell(focusEl, e.key.toUpperCase());
-						moveNextCell();
-					} else if (e.key === " ") {
-						let targetEl;
-						let action;
-						({ targetEl: targetEl, action: action } = getTargetAction(e.target));
-						if (action === undefined || action == null) {
-							toggleDirection();
-							updateCurrentClue();
+					const revealPopoverStyle = window.getComputedStyle(popoverEl);
+					if (revealPopoverStyle.display === "none") {
+						if (/^[a-z]$/i.test(e.key)) {
+							setCell(focusEl, e.key.toUpperCase());
+							moveNextCell();
+						} else if (e.key === " ") {
+							let targetEl;
+							let action;
+							({ targetEl: targetEl, action: action } = getTargetAction(e.target));
+							if (action === undefined || action == null) {
+								toggleDirection();
+								updateCurrentClue();
+								doDefault = false;
+							}
+						} else if (e.keyCode === 8) {
+							if (focusEl.innerText === "") {
+								movePreviousCell();
+								focusEl = document.querySelector("[class~='puzzle-cell-focus']");
+								if (focusEl === undefined || focusEl === null) {
+									return;
+								}
+							}
+							setCell(focusEl, "");
+						} else if (e.keyCode === 40) { // down
+							moveDown({hopBlocks: true});
+							doDefault = false;
+						} else if (e.keyCode === 38) { // up
+							moveUp({hopBlocks: true});
+							doDefault = false;
+						} else if (e.keyCode === 37) { // left
+							moveLeft({hopBlocks: true});
+							doDefault = false;
+						} else if (e.keyCode === 39) { // right
+							moveRight({hopBlocks: true});
+							doDefault = false;
+						} else if (e.key === ".") {
+							showRevealMenu(focusEl);
 							doDefault = false;
 						}
-					} else if (e.keyCode === 8) {
-						if (focusEl.innerText === "") {
-							movePreviousCell();
-							focusEl = document.querySelector("[class~='puzzle-cell-focus']");
-							if (focusEl === undefined || focusEl === null) {
-								return;
-							}
-						}
-						setCell(focusEl, "");
-					} else if (e.keyCode === 40) { // down
-						moveDown({hopBlocks: true});
-						doDefault = false;
-					} else if (e.keyCode === 38) { // up
-						moveUp({hopBlocks: true});
-						doDefault = false;
-					} else if (e.keyCode === 37) { // left
-						moveLeft({hopBlocks: true});
-						doDefault = false;
-					} else if (e.keyCode === 39) { // right
-						moveRight({hopBlocks: true});
-						doDefault = false;
 					}
-					
+
 					if (!doDefault) {
 						e.preventDefault();
 						e.cancelBubble = true;
@@ -712,6 +718,21 @@
 				}
 			};
 
+			const popoverEl = document.querySelector("#revealpopover");
+			function showRevealMenu(cellEl) {
+				let offsetLeft = cellEl.offsetLeft;
+				let offsetTop = cellEl.offsetTop;
+				let p = cellEl.parentElement;
+				while (p !== null && p !== undefined) {
+					offsetTop = offsetTop + p.offsetTop;
+					offsetLeft = offsetLeft + p.offsetLeft;
+					p = p.parentElement;
+				}
+				popoverEl.style.setProperty("top", "" + offsetTop + "px");
+				popoverEl.style.setProperty("left", "" + offsetLeft + "px");
+				popoverEl.showPopover({source: cellEl});
+			}
+			
 			let longpressTimer = 0;
 			function endLongPress() {
 				if (longpressTimer !== 0) {
@@ -722,12 +743,7 @@
 
 			function startLongPress(targetEl) {
 				endLongPress();
-				longpressTimer = setTimeout(function(cellEl) {
-					const popoverEl = document.querySelector("#revealpopover");
-					if (popoverEl !== undefined && popoverEl !== null) {
-						popoverEl.showPopover({source: cellEl});
-					}
-				}, 1000, targetEl);
+				longpressTimer = setTimeout(showRevealMenu, 1000, targetEl);
 			}
 
 			document.addEventListener("mousedown", function(e) {
@@ -813,6 +829,8 @@
 							}
 						} else if (action === "return-to-puzzle-list") {
 							history.back();
+						} else if (/^reveal-/i.test(action)) {
+							alert(action);
 						}
 					}
 				}
@@ -1058,6 +1076,45 @@
 		color: gray;
 	}
 	
+	#revealpopover {
+		margin: 0;
+		position: absolute;
+		border-style: none;
+		box-shadow: 5px 5px 12px rgba(0, 0, 0, 0.6);
+	}
+
+	.popovermenu {
+		margin: 0;
+		padding: 0;
+		font-size: .95rem;
+	}
+
+	@media (min-resolution: 150dpi) {
+		.popovermenu {
+			font-size: 1.5rem;
+		}
+	}
+
+	.popovermenu > li {
+		padding: .5rem;
+		list-style: none;
+	}
+
+	@media (min-resolution: 150dpi) {
+		.popovermenu > li {
+			padding-top: .75rem;
+			padding-bottom: .75rem;
+		}
+	}
+
+	.popovermenu > li:active {
+		background-color: lightgray;
+	}
+	
+	.popovermenu > li:hover {
+		background-color: lightgray;
+	}
+	
 	</style>
 </head>
 <body>
@@ -1129,10 +1186,10 @@
 	</dialog>
 	
 	<div id="revealpopover" popover>
-      <ul>
-        <li action="revealLetter">Reveal letter</li>
-        <li action="revealWord">Reveal word</li>
-        <li action="revealPuzzle">Reveal puzzle</li>
+      <ul class="popovermenu">
+        <li action="reveal-letter" tabindex="0">Reveal letter</li>
+        <li action="reveal-word" tabindex="0">Reveal word</li>
+        <li action="reveal-puzzle" tabindex="0">Reveal puzzle</li>
       </ul>
     </div>
 </body>
