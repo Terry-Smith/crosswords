@@ -4,6 +4,10 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 	<meta name="viewport" content="width=device-width">
 	<style>
+		:root {
+			--key-color-special: #d9d9d9
+		}
+		
 		@view-transition {
 			navigation: auto;
 			types: slide, forwards;
@@ -197,9 +201,11 @@
 		}
 
 		.puzzle-keyboard-key {
+			--key-width: 2.2rem;
+			--key-font-size: 1.75rem;
 			display: inline-grid;
-			font-size: 1.75rem;
-			width: 2.2rem;
+			font-size: var(--key-font-size);
+			width: var(--key-width);
 			height: 3.1rem;
 			justify-content: center;
 			align-content: center;
@@ -209,23 +215,48 @@
 			background-color: white;
 			border-radius: .5rem;
 		}
-
-/*		@media (min-resolution: 150dpi) {
+		
+		@media (min-resolution: 150dpi) {
 			.puzzle-keyboard-key {
-				font-size: 2.5rem;
-				width: 4rem;
-				height: 4rem;
+				--key-width: 2.17rem;
+				--key-font-size: 1.75rem;
+				font-size: var(--key-font-size);
+				width: var(--key-width);
+				height: 3.4rem;
 			}
 		}
-*/		
+		
 		.puzzle-keyboard-key:hover {
 			outline: none;
 			box-shadow: inset 0 0 0 0.2rem rgba(38,143,255,.5);
 		}
 
 		.puzzle-keyboard-key[key-action="bs"] {
-			background-color: #d9d9d9;
-			width: 3rem;
+			background-color: var(--key-color-special);
+			width: calc(var(--key-width) * 1.75);
+		}
+
+		.puzzle-keyboard-key[key-action="bs"] > img {
+			width: calc(var(--key-width) / 1.5);
+		}
+		
+		.puzzle-keyboard-key[key-action="_"] {
+			width: calc(var(--key-width) * 3);
+		}
+
+		.puzzle-keyboard-key[key-action="?"] {
+			background-color: var(--key-color-special);
+			font-size: calc(var(--key-font-size) * .85);
+		}
+
+		.puzzle-keyboard-key[key-action="."] {
+			background-color: var(--key-color-special);
+		}
+		
+		.puzzle-keyboard-row {
+			display: inline-flex;
+			justify-content: center;
+			margin-bottom: 0.05rem;
 		}
 		
 		dialog {
@@ -558,6 +589,13 @@
 				return {targetEl: targetEl, action: action};
 			}
 			
+			function reveal(action) {
+				if (action === "reveal-letter") {
+				} else if (action === "reveal-word") {
+				} else if (action === "reveal-puzzle") {
+				}
+			}
+			
 			document.addEventListener("keydown", function(e) {
 				let focusEl = document.querySelector("[class~='puzzle-cell-focus']");
 				if (focusEl !== undefined && focusEl !== null) {
@@ -598,8 +636,32 @@
 							moveRight({hopBlocks: true});
 							doDefault = false;
 						} else if (e.key === ".") {
-							showRevealMenu(focusEl);
+							showRevealMenu(currentCellEl);
 							doDefault = false;
+						}
+					} else {
+						// In the reveal menu
+						if (e.keyCode === 40) { // down
+							let focusEl = popoverEl.querySelector("li:focus");
+							if (focusEl !== undefined && focusEl !== null && focusEl.nextElementSibling === null) {
+								focusEl = popoverEl.querySelector("li");
+							} else {
+								focusEl = focusEl.nextElementSibling;
+							}
+							focusEl.focus();
+							doDefault = false;
+						} else if (e.keyCode === 38) { // up
+							let focusEl = popoverEl.querySelector("li:focus");
+							if (focusEl !== undefined && focusEl !== null && focusEl.previousElementSibling === null) {
+								focusEl = popoverEl.querySelector("li:last-child");
+							} else {
+								focusEl = focusEl.previousElementSibling;
+							}
+							focusEl.focus();
+							doDefault = false;
+						} else if (e.key === " ") {
+							popoverEl.hidePopover();
+							reveal(getTargetAction(e.target));
 						}
 					}
 
@@ -719,18 +781,29 @@
 			};
 
 			const popoverEl = document.querySelector("#revealpopover");
-			function showRevealMenu(cellEl) {
-				let offsetLeft = cellEl.offsetLeft;
-				let offsetTop = cellEl.offsetTop;
-				let p = cellEl.parentElement;
-				while (p !== null && p !== undefined) {
-					offsetTop = offsetTop + p.offsetTop;
-					offsetLeft = offsetLeft + p.offsetLeft;
-					p = p.parentElement;
+			popoverEl.addEventListener("toggle", function(e) {
+				if (e.newState === 'open') {
+					let offsetLeft = popoverEl.cellEl.offsetLeft;
+					let offsetTop = popoverEl.cellEl.offsetTop;
+					let p = popoverEl.cellEl.parentElement;
+					while (p !== null && p !== undefined) {
+						offsetTop = offsetTop + p.offsetTop;
+						offsetLeft = offsetLeft + p.offsetLeft;
+						p = p.parentElement;
+					}
+					popoverEl.style.setProperty("top", "calc(" + offsetTop + "px - 0.5rem)");
+					popoverEl.style.setProperty("left", "calc(" + offsetLeft + "px - 0.5rem)");
+					
+					const firstItem = popoverEl.querySelector("li");
+					if (firstItem !== undefined && firstItem !== null) {
+						firstItem.focus();
+					}
 				}
-				popoverEl.style.setProperty("top", "" + offsetTop + "px");
-				popoverEl.style.setProperty("left", "" + offsetLeft + "px");
-				popoverEl.showPopover({source: cellEl});
+			});
+			
+			function showRevealMenu(cellEl) {
+				popoverEl.cellEl = cellEl;
+				popoverEl.showPopover();
 			}
 			
 			let longpressTimer = 0;
@@ -788,6 +861,10 @@
 						if (key === "_") {
 							toggleDirection();
 							updateCurrentClue();
+						} else if (key === ".") {
+							showRevealMenu(currentCellEl);
+						} else if (key === "?") {
+							alert("This is the help popover");
 						} else if (key === "bs") {
 							if (focusEl.innerText === "") {
 								movePreviousCell();
@@ -830,7 +907,8 @@
 						} else if (action === "return-to-puzzle-list") {
 							history.back();
 						} else if (/^reveal-/i.test(action)) {
-							alert(action);
+							popoverEl.hidePopover();
+							reveal(action);
 						}
 					}
 				}
@@ -1017,12 +1095,11 @@
 		padding: 0.5rem;
 		padding-bottom: 0;
 		display: inline-grid;
-		grid-template-columns: repeat(10, 1fr);
+		grid-template-rows: max-content;
 		font-size: 1.25rem;
 		background-color: #f1f1f1;
 		color: black;
 		cursor: default;
-		width: min-content;
 	}
 
 	.puzzle-title {
@@ -1137,9 +1214,10 @@
 			<div class="puzzle-grid scrollable_content"></div>
 		</div>
 		<div class="page_footer">
-			<div class="puzzle-keyboard-key" key-action="q">q</div><div class="puzzle-keyboard-key" key-action="w">w</div><div class="puzzle-keyboard-key" key-action="e">e</div><div class="puzzle-keyboard-key" key-action="r">r</div><div class="puzzle-keyboard-key" key-action="t">t</div><div class="puzzle-keyboard-key" key-action="y">y</div><div class="puzzle-keyboard-key" key-action="u">u</div><div class="puzzle-keyboard-key" key-action="i">i</div><div class="puzzle-keyboard-key" key-action="o">o</div><div class="puzzle-keyboard-key" key-action="p">p</div>
-			<div class="puzzle-keyboard-key" key-action=""></div><div class="puzzle-keyboard-key" key-action="a">a</div><div class="puzzle-keyboard-key" key-action="s">s</div><div class="puzzle-keyboard-key" key-action="d">d</div><div class="puzzle-keyboard-key" key-action="f">f</div><div class="puzzle-keyboard-key" key-action="g">g</div><div class="puzzle-keyboard-key" key-action="h">h</div><div class="puzzle-keyboard-key" key-action="j">j</div><div class="puzzle-keyboard-key" key-action="k">k</div><div class="puzzle-keyboard-key" key-action="l">l</div>
-			<div class="puzzle-keyboard-key" key-action="_">_</div><div class="puzzle-keyboard-key" key-action="z">z</div><div class="puzzle-keyboard-key" key-action="x">x</div><div class="puzzle-keyboard-key" key-action="c">c</div><div class="puzzle-keyboard-key" key-action="v">v</div><div class="puzzle-keyboard-key" key-action="b">b</div><div class="puzzle-keyboard-key" key-action="n">n</div><div class="puzzle-keyboard-key" key-action="m">m</div><div class="puzzle-keyboard-key" key-action="bs"><img src="backspace.svg" width="24px" height="24px"></div><div class="puzzle-keyboard-key" key-action=""></div>
+			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" key-action="q">q</div><div class="puzzle-keyboard-key" key-action="w">w</div><div class="puzzle-keyboard-key" key-action="e">e</div><div class="puzzle-keyboard-key" key-action="r">r</div><div class="puzzle-keyboard-key" key-action="t">t</div><div class="puzzle-keyboard-key" key-action="y">y</div><div class="puzzle-keyboard-key" key-action="u">u</div><div class="puzzle-keyboard-key" key-action="i">i</div><div class="puzzle-keyboard-key" key-action="o">o</div><div class="puzzle-keyboard-key" key-action="p">p</div></div>
+			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" key-action="a">a</div><div class="puzzle-keyboard-key" key-action="s">s</div><div class="puzzle-keyboard-key" key-action="d">d</div><div class="puzzle-keyboard-key" key-action="f">f</div><div class="puzzle-keyboard-key" key-action="g">g</div><div class="puzzle-keyboard-key" key-action="h">h</div><div class="puzzle-keyboard-key" key-action="j">j</div><div class="puzzle-keyboard-key" key-action="k">k</div><div class="puzzle-keyboard-key" key-action="l">l</div></div>
+			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" key-action="z">z</div><div class="puzzle-keyboard-key" key-action="x">x</div><div class="puzzle-keyboard-key" key-action="c">c</div><div class="puzzle-keyboard-key" key-action="v">v</div><div class="puzzle-keyboard-key" key-action="b">b</div><div class="puzzle-keyboard-key" key-action="n">n</div><div class="puzzle-keyboard-key" key-action="m">m</div><div class="puzzle-keyboard-key backspace-key" key-action="bs"><img src="backspace.svg"></div></div>
+			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" key-action="?">?</div><div class="puzzle-keyboard-key" key-action="_">_</div><div class="puzzle-keyboard-key" key-action=".">.</div></div>
 		</div>
 	</div>
 
