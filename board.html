@@ -342,6 +342,12 @@
 			margin-right: 0.5rem;
 		}
 		
+		.for-sizing {
+			visibility: hidden;
+			display: block;
+			top: 0;
+			left: 0;
+		}
 	</style>
 
 	<script src="https://cdn.jsdelivr.net/npm/idb@8/build/umd.js"></script>
@@ -487,16 +493,29 @@
 				updateState();
 			}
 			
-			function setCell(cellEl, letter) {
+			function setCell(cellEl, letter, options) {
+				let showError = false;
 				cellEl.innerText = letter.toUpperCase();
 				let cellIndex = parseInt(cellEl.getAttribute("cellindex"));
+
+				// If a cell is being revealed, only show an error if the cell does not already have the correct letter.
+				if (options?.reveal && ps.cellGuesses[cellIndex].letter !== pd.cells[cellIndex]) {
+					showError = true;
+				}
+
 				ps.cellGuesses[cellIndex].letter = cellEl.innerText;
+
 				if (crosswordOptions.showErrors) {
 					if (ps.cellGuesses[cellIndex].letter !== "" && ps.cellGuesses[cellIndex].letter !== pd.cells[cellIndex]) {
-						ps.cellGuesses[cellIndex].type = "wrong";
-						cellEl.setAttribute("guess", "wrong");
+						showError = true;
 					}
 				}
+
+				if (showError) {
+					ps.cellGuesses[cellIndex].type = "wrong";
+					cellEl.setAttribute("guess", "wrong");
+				}
+				
 				// Show errors may have been on so anything that is wrong and then fixed or cleared needs to be made waswrong.
 				let guessType = cellEl.getAttribute("guess");
 				if (guessType === "wrong" && (cellEl.innerText === "" || (ps.cellGuesses[cellIndex].letter === pd.cells[cellIndex]))) {
@@ -514,6 +533,9 @@
 				}
 				
 				if (complete) {
+					if (options !== undefined && options !== null) {
+						options.puzzleComplete = true;
+					}
 					setTimeout(function() {
 						alert("Yer done.");
 						}, 0);
@@ -590,9 +612,41 @@
 			}
 			
 			function reveal(action) {
-				if (action === "reveal-letter") {
-				} else if (action === "reveal-word") {
-				} else if (action === "reveal-puzzle") {
+				let cellList = [];
+				const puzzleGridEl = document.querySelector("div[class~='puzzle-grid']");
+				if (puzzleGridEl !== undefined && puzzleGridEl !== null) {
+					if (action === "reveal-letter") {
+						const el = puzzleGridEl.querySelector(".puzzle-cell-focus");
+						if (el !== undefined && el !== null) {
+							cellList.push(el);
+						}
+					} else if (action === "reveal-word") {
+						const els = puzzleGridEl.querySelectorAll(".puzzle-cell-current-clue");
+						if (els !== undefined && els !== null) {
+							for (const el of els) {
+								cellList.push(el);
+							}
+						}
+					} else if (action === "reveal-puzzle") {
+						const els = puzzleGridEl.querySelectorAll(".puzzle-cell:not(.puzzle-cell-block)");
+						if (els !== undefined && els !== null) {
+							for (const el of els) {
+								cellList.push(el);
+							}
+						}
+					}
+					
+					const options = {
+						reveal: true,
+						puzzleComplete: false
+					};
+					for (const el of cellList) {
+						const cellIndex = parseInt(el.getAttribute("cellindex"));
+						setCell(el, pd.cells[cellIndex], options);
+						if (options.puzzleComplete) {
+							break;
+						}
+					}
 				}
 			}
 			
@@ -783,17 +837,6 @@
 			const popoverEl = document.querySelector("#revealpopover");
 			popoverEl.addEventListener("toggle", function(e) {
 				if (e.newState === 'open') {
-					let offsetLeft = popoverEl.cellEl.offsetLeft;
-					let offsetTop = popoverEl.cellEl.offsetTop;
-					let p = popoverEl.cellEl.parentElement;
-					while (p !== null && p !== undefined) {
-						offsetTop = offsetTop + p.offsetTop;
-						offsetLeft = offsetLeft + p.offsetLeft;
-						p = p.parentElement;
-					}
-					popoverEl.style.setProperty("top", "calc(" + offsetTop + "px - 0.5rem)");
-					popoverEl.style.setProperty("left", "calc(" + offsetLeft + "px - 0.5rem)");
-					
 					const firstItem = popoverEl.querySelector("li");
 					if (firstItem !== undefined && firstItem !== null) {
 						firstItem.focus();
@@ -802,41 +845,42 @@
 			});
 			
 			function showRevealMenu(cellEl) {
-				popoverEl.cellEl = cellEl;
+				const viewPortRect = document.documentElement.getBoundingClientRect();
+				const cellRect = cellEl.getBoundingClientRect()
+				popoverEl.classList.add("for-sizing");
+				const popoverRect = popoverEl.getBoundingClientRect();
+
+				let top = cellRect.top;
+				let left = cellRect.left;
+				let xSign = "-";
+				let ySign = "-";
+				if (left < 0) {
+					left = 0;
+					xSign = "+";
+				} else if (left + popoverRect.width > viewPortRect.width) {
+					left = viewPortRect.width - popoverRect.width;
+					xSign = "-";
+				}
+				if (top < 0) {
+					top = 0;
+					xSign = "+";
+				} else if (top + popoverRect.height > viewPortRect.height) {
+					top = viewPortRect.height - popoverRect.height;
+					ySign = "-";
+				}
+				popoverEl.classList.remove("for-sizing");
+				popoverEl.style.setProperty("top", `calc(${top}px ${ySign} 0.5rem)`);
+				popoverEl.style.setProperty("left", `calc(${left}px ${xSign} 0.5rem)`);
 				popoverEl.showPopover();
 			}
 			
-			let longpressTimer = 0;
-			function endLongPress() {
-				if (longpressTimer !== 0) {
-					clearTimeout(longpressTimer);
-					longpressTimer = 0;
-				}
-			}
-
-			function startLongPress(targetEl) {
-				endLongPress();
-				longpressTimer = setTimeout(showRevealMenu, 1000, targetEl);
-			}
-
-			document.addEventListener("mousedown", function(e) {
+			document.addEventListener("contextmenu", function(e) {
 				if (isCell(e.target, puzzleDefinition)) {
-					startLongPress(e.target);
+					e.preventDefault();
+					e.cancelBubble = true;
+					e.stopPropagation();
+					showRevealMenu(e.target);
 				}
-			});
-			
-			document.addEventListener("mouseup", function(e) {
-				endLongPress();
-			});
-
-			document.addEventListener("touchstart", function(e) {
-				if (isCell(e.target, puzzleDefinition)) {
-					startLongPress(e.target);
-				}
-			});
-			
-			document.addEventListener("touchend", function(e) {
-				endLongPress();
 			});
 
 			document.addEventListener("click", function(e) {
