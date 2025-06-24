@@ -152,6 +152,7 @@
 			height: 1rem;
 			border-style: solid;
 			border-width: 1px;
+			margin-left: 3rem;
 		}
 
 		.puzzle-cell-current-clue {
@@ -274,9 +275,12 @@
 		}
 
 		.dlg-title {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
+			border-bottom-style: solid;
+			border-bottom-width: 1px;
+			border-bottom-color: lightgray;
+			padding-bottom: .5rem;
+			padding-top: .5rem;
+			text-align: center;
 		}
 		
 		.dlg-title h1 {
@@ -284,9 +288,18 @@
 		}
 		
 		.close-btn {
-			border: none;
+			border: solid;
 			background-color: transparent;
-			font-size: 2.5rem;
+			font-size: 1rem;
+			border-width: 1px;
+			padding: .25rem;
+			border-color: lightgray;
+			padding-left: .5rem;
+			padding-right: .5rem;
+		}
+		
+		.close-btn:hover {
+			background-color: lightgray;
 		}
 		
 		.dlg-row {
@@ -320,6 +333,15 @@
 			margin-top: .25rem;
 		}
 		
+		.dlg-footer {
+			text-align: center;
+			border-top-style: solid;
+			border-top-color: lightgray;
+			border-top-width: 1px;
+			padding-top: 1rem;
+			margin-top: .5rem;
+		}
+
 		@media (min-resolution: 150dpi) {
 			.dlg-row {
 				font-size: 1.5rem;
@@ -1101,13 +1123,13 @@
 		</script>
 
 	<style>
-	.grid_layout {
+	.grid-layout {
 		display: grid;
 		grid-template-rows: auto 1fr auto;
 		min-height: calc(100vh - 4.5rem);
 	}
 
-	.page_header {
+	.page-header {
 		grid-row: 1;
 		background-color: lightblue;
 		background-color: #5d5d5d;
@@ -1120,18 +1142,18 @@
 		justify-content: space-between;
 	}
 
-	.page_content {
+	.page-content {
 		background-color: lightyellow;
 		position: relative;
 		grid-row: 2;
 		overflow: auto;
 	}
 
-	.scrollable_content {
+	.scrollable-content {
 		position: absolute;
 	}
 
-	.page_footer {
+	.page-footer {
 		grid-row: 3;
 		border-top-style: solid;
 		border-top-width: 1px;
@@ -1239,8 +1261,8 @@
 	</style>
 </head>
 <body>
-	<div class="grid_layout">
-		<div class="page_header">
+	<div class="grid-layout">
+		<div class="page-header">
 			<button class="puzzle-title" action="show-dialog-puzzle-info" tabIndex="0"></button>
 			<button class="puzzle-button" action="return-to-puzzle-list">
 				<svg class="" fill="currentColor" aria-hidden="true" width="1em" height="1em" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -1254,10 +1276,10 @@
 				</svg>
 			</button>
 		</div>
-		<div class="page_content">
-			<div class="puzzle-grid scrollable_content"></div>
+		<div class="page-content">
+			<div class="puzzle-grid scrollable-content"></div>
 		</div>
-		<div class="page_footer">
+		<div class="page-footer">
 			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" key-action="q">q</div><div class="puzzle-keyboard-key" key-action="w">w</div><div class="puzzle-keyboard-key" key-action="e">e</div><div class="puzzle-keyboard-key" key-action="r">r</div><div class="puzzle-keyboard-key" key-action="t">t</div><div class="puzzle-keyboard-key" key-action="y">y</div><div class="puzzle-keyboard-key" key-action="u">u</div><div class="puzzle-keyboard-key" key-action="i">i</div><div class="puzzle-keyboard-key" key-action="o">o</div><div class="puzzle-keyboard-key" key-action="p">p</div></div>
 			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" key-action="a">a</div><div class="puzzle-keyboard-key" key-action="s">s</div><div class="puzzle-keyboard-key" key-action="d">d</div><div class="puzzle-keyboard-key" key-action="f">f</div><div class="puzzle-keyboard-key" key-action="g">g</div><div class="puzzle-keyboard-key" key-action="h">h</div><div class="puzzle-keyboard-key" key-action="j">j</div><div class="puzzle-keyboard-key" key-action="k">k</div><div class="puzzle-keyboard-key" key-action="l">l</div></div>
 			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" key-action="z">z</div><div class="puzzle-keyboard-key" key-action="x">x</div><div class="puzzle-keyboard-key" key-action="c">c</div><div class="puzzle-keyboard-key" key-action="v">v</div><div class="puzzle-keyboard-key" key-action="b">b</div><div class="puzzle-keyboard-key" key-action="n">n</div><div class="puzzle-keyboard-key" key-action="m">m</div><div class="puzzle-keyboard-key backspace-key" key-action="bs"><img src="backspace.svg"></div></div>
@@ -1265,17 +1287,15 @@
 		</div>
 	</div>
 
-
 	<dialog id="puzzle-settings">
 		<div class="dlg-title">
 			<h1>Settings</h1>
-			<button class="close-btn" action="close-dlg">&times;</button>
 		</div>
 		<div class="dlg-row dlg-row-justify-left">
 			<div class="dlg-row dlg-row-space-between">
 			<label class="checkbox-label" for="ShowErrors"><input type="checkbox" name="ShowErrors" id="ShowErrors" data-prop-name="showErrors"/>Show errors</label><div class="puzzle-cell puzzle-cell-sample" cluenumber="23"></div>
 			</div>
-			<div class="dlg-row-description">Show incorrect letters and show where errors were shown even if correct letter is now there.</div>
+			<div class="dlg-row-description">Show incorrect letters and show where errors were corrected.</div>
 		</div>
 		<div class="dlg-row dlg-row-justify-left">
 			<label class="checkbox-label" for="SkipFilled"><input type="checkbox" name="SkipFilled" id="SkipFilled" data-prop-name="skipFilledCells" />Skip filled boxes</label>
@@ -1291,20 +1311,24 @@
 			</select>
 			<div class="dlg-row-description">Select what happens when you type past the end of a word.</div>
 		</div>
+		<div class="dlg-footer">
+			<button class="close-btn" action="close-dlg">Close</button>
+		</div>
 	</dialog>
 
 	<dialog id="puzzle-info">
 		<div class="dlg-title">
 			<h1>Info</h1>
-			<button class="close-btn" action="close-dlg">&times;</button>
 		</div>
-		<hr/>
 		<info-source></info-source>
 		<info-title></info-title>
 		<info-author></info-author>
 		<info-copyright></info-copyright>
 		<info-notes></info-notes>
 		<info-trustedNotes></info-trustedNotes>
+		<div class="dlg-footer">
+			<button class="close-btn" action="close-dlg">Close</button>
+		</div>
 	</dialog>
 	
 	<div id="revealpopover" popover>

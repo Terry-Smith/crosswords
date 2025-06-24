@@ -142,6 +142,7 @@
 			height: 1rem;
 			border-style: solid;
 			border-width: 1px;
+			margin-left: 3rem;
 		}
 
 		.puzzle-cell-current-clue {
@@ -237,9 +238,12 @@
 		}
 
 		.dlg-title {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
+			border-bottom-style: solid;
+			border-bottom-width: 1px;
+			border-bottom-color: lightgray;
+			padding-bottom: .5rem;
+			padding-top: .5rem;
+			text-align: center;
 		}
 		
 		.dlg-title h1 {
@@ -247,9 +251,18 @@
 		}
 		
 		.close-btn {
-			border: none;
+			border: solid;
 			background-color: transparent;
-			font-size: 2.5rem;
+			font-size: 1rem;
+			border-width: 1px;
+			padding: .25rem;
+			border-color: lightgray;
+			padding-left: .5rem;
+			padding-right: .5rem;
+		}
+		
+		.close-btn:hover {
+			background-color: lightgray;
 		}
 		
 		.dlg-row {
@@ -285,6 +298,15 @@
 			color: #615e5e;
 			letter-spacing: .02rem;
 			margin-top: .25rem;
+		}
+		
+		.dlg-footer {
+			text-align: center;
+			border-top-style: solid;
+			border-top-color: lightgray;
+			border-top-width: 1px;
+			padding-top: 1rem;
+			margin-top: .5rem;
 		}
 		
 		@media (min-resolution: 150dpi) {
@@ -695,13 +717,13 @@
 		letter-spacing: 0.02rem;
 	}
 
-	.grid_layout {
+	.grid-layout {
 		display: grid;
 		grid-template-rows: auto 1fr auto;
-		min-height: calc(100vh - 3.5rem);
+		max-height: calc(100vh - 3.5rem);
 	}
 
-	.page_header {
+	.page-header {
 		grid-row: 1;
 		background-color: lightblue;
 		background-color: #5d5d5d;
@@ -714,18 +736,18 @@
 		justify-content: space-between;
 	}
 
-	.page_content {
+	.page-content {
 		background-color: lightyellow;
 		position: relative;
 		grid-row: 2;
 		overflow: auto;
 	}
 
-	.scrollable_content {
+	.scrollable-content {
 		position: absolute;
 	}
 
-	.page_footer {
+	.page-footer {
 		grid-row: 3;
 		border-top-style: solid;
 		border-top-width: 1px;
@@ -923,8 +945,8 @@
 	</style>
 </head>
 <body>
-	<div class="grid_layout">
-		<div class="page_header">
+	<div class="grid-layout">
+		<div class="page-header">
 			<button class="puzzle-button" action="show-dialog-download-puzzles">
 				<svg viewBox="2 2 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 					<path d="m0 0h20v20h-20z" fill="currentColor" opacity="0"/>
@@ -944,7 +966,7 @@
 				</svg>
 			</button>
 		</div>
-		<div class="page_content">
+		<div class="page-content">
 			<ul class="puzzle-list">
 			</ul>
 			<div class="inline-block download-hint hidden">
@@ -959,7 +981,6 @@
 	<dialog id="download-puzzles">
 		<div class="dlg-title">
 			<h1>Download</h1>
-			<button class="close-btn" action="close-dlg">&times;</button>
 		</div>
 		<div class="dlg-row dlg-row-justify-left">
 			<div class="date-banner">
@@ -970,20 +991,22 @@
 			<div class="dlg-row-description">Download puzzles for the selected date.</div>
 		</div>
 		<div class="dlg-row dlg-row-justify-right">
-			<button class="" action="download-puzzles">Dowload puzzles</button>
+			<button class="" action="download-puzzles">Download puzzles</button>
+		</div>
+		<div class="dlg-footer">
+			<button class="close-btn" action="close-dlg">Close</button>
 		</div>
 	</dialog>
 
 	<dialog id="puzzle-settings">
 		<div class="dlg-title">
 			<h1>Settings</h1>
-			<button class="close-btn" action="close-dlg">&times;</button>
 		</div>
 		<div class="dlg-row dlg-row-justify-left">
 			<div class="dlg-row dlg-row-space-between">
 			<label class="checkbox-label" for="ShowErrors"><input type="checkbox" name="ShowErrors" id="ShowErrors" data-prop-name="showErrors"/>Show errors</label><div class="puzzle-cell puzzle-cell-sample" cluenumber="23"></div>
 			</div>
-			<div class="dlg-row-description">Show incorrect letters and show where errors were shown even if correct letter is now there.</div>
+			<div class="dlg-row-description">Show incorrect letters and show where errors were corrected.</div>
 		</div>
 		<div class="dlg-row dlg-row-justify-left">
 			<label class="checkbox-label" for="SkipFilled"><input type="checkbox" name="SkipFilled" id="SkipFilled" data-prop-name="skipFilledCells" />Skip filled boxes</label>
@@ -998,6 +1021,9 @@
 				<option value="nextParallelClue">Next parallel clue</option>
 			</select>
 			<div class="dlg-row-description">Select what happens when you type past the end of a word.</div>
+		</div>
+		<div class="dlg-footer">
+			<button class="close-btn" action="close-dlg">Close</button>
 		</div>
 	</dialog>
 </body>
