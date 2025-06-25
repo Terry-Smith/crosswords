@@ -215,6 +215,8 @@
 			margin-right: 0.3rem;
 			background-color: white;
 			border-radius: .5rem;
+			transition-property: background-color;
+			transition-duration: .1s;
 		}
 		
 		@media (min-resolution: 150dpi) {
@@ -252,6 +254,10 @@
 
 		.puzzle-keyboard-key[key-action="."] {
 			background-color: var(--key-color-special);
+		}
+		
+		.puzzle-keyboard-key[pressed] {
+			background-color: lightgray;
 		}
 		
 		.puzzle-keyboard-row {
@@ -905,6 +911,12 @@
 				}
 			});
 
+			document.addEventListener("transitionend", function(e) {
+				if (e.target.classList.contains("puzzle-keyboard-key")) {
+					e.target.removeAttribute("pressed");
+				}
+			});
+			
 			document.addEventListener("click", function(e) {
 				if (isCell(e.target, puzzleDefinition)) {
 					if (focusInCellEl === e.target) {
@@ -941,6 +953,7 @@
 							}
 							setCell(focusEl, "");
 						} else if (/^[a-z]$/i.test(key)) {
+							e.target.setAttribute("pressed", "");
 							setCell(focusEl, key.toUpperCase());
 							moveNextCell();
 						}
