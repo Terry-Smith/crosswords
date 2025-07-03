@@ -98,5 +98,40 @@
         <li action="reveal-puzzle" tabindex="0">Reveal puzzle</li>
       </ul>
     </div>
+	
+	<dialog id="puzzle-complete">
+		<div class="dlg-title">
+			<h1>Puzzle Completed!</h1>
+		</div>
+		<div class="dlg-row" complete-time></div>
+		<div class="dlg-row" total-boxes></div>
+		<div class="dlg-row" hinted-boxes></div>
+		<div class="dlg-row" total-clues></div>
+		<div class="dlg-footer">
+			<button class="close-btn" action="close-dlg">Close</button>
+		</div>
+	</dialog>
+	
+	<dialog id="puzzle-help">
+		<div class="dlg-title">
+			<h1>Help</h1>
+		</div>
+		<p>Depending on your device...
+			<ul>
+			<li>Use touch, your mouse, or your keyboard arrows to set the current box.</li>
+			<li>Use a second touch in the same box or the space bar to toggle between across and down.</li>
+			<li>Use long touch, right click, or the period key in a box to display a context menu with reveal options. The current letter, word, or entire puzzle can be revealed.</li>
+			<li>Use the gear icon button for playing options. Use the show errors option to show incorrect letters that have been entered into boxes.</li>
+			</ul>
+		</p>
+		<p>Your progress is automatically saved on the device you are filling in boxes.</p>
+		<h3>License</h3>
+		<p>The look, feel, and most behavior of this software is heavily borrowed from the mobile application "Shortyz Crosswords" &copy; 2009-2014 Robert Cooper under the GNU GENERAL PUBLIC LICENSE. Therefore, this 
+		software is also licensed under the <a href="https://www.gnu.org/licenses/gpl-3.0.en.html#license-text">GNU GENERAL PUBLIC LICENSE</a>
+		<div class="dlg-footer">
+			<button class="close-btn" action="close-dlg">Close</button>
+		</div>
+	</dialog>
+
 </body>
 </html>

@@ -183,8 +183,16 @@ function Puzzle(definition, state) {
 				options.puzzleComplete = true;
 			}
 			setTimeout(function() {
-				alert("Yer done.");
-				}, 0);
+				// Yer done
+				let dialogEl = document.querySelector("#puzzle-complete");
+				if (dialogEl !== undefined && dialogEl !== null) {
+					const initFn = dlgInitFunctions["puzzle-complete-init"];
+					if (initFn !== undefined && initFn !== null) {
+						initFn(dialogEl);
+					}
+					dialogEl.showModal();
+				}
+			}, 0);
 		} else {
 			updateState();
 		}
@@ -338,6 +346,9 @@ function Puzzle(definition, state) {
 				} else if (e.key === ".") {
 					showRevealMenu(currentCellEl);
 					doDefault = false;
+				} else if (e.key === "?") {
+					showHelp();
+					doDefault = false;
 				}
 			} else {
 				// In the reveal menu
@@ -477,6 +488,49 @@ function Puzzle(definition, state) {
 					}
 				}
 			}
+		},
+
+		"puzzle-complete-init": function(dialogEl) {
+			if (!dialogEl.inited) {
+				dialogEl.inited = true;
+				const totalBoxes = puzzleState.cellGuesses.reduce((acc, g) => acc + (g.letter !== "#" ? 1 : 0), 0);
+				const hintedBoxes = puzzleState.cellGuesses.reduce((acc, g) => acc + (g.type !== "" ? 1 : 0), 0);
+				let totalClues = puzzleDefinition.clues["across"].reduce((acc, clue) => acc + (clue !== "" ? 1 : 0), 0);
+				totalClues = puzzleDefinition.clues["down"].reduce((acc, clue) => acc + (clue !== "" ? 1 : 0), totalClues);
+				const attributes = [{
+					"name": "complete-time", 
+					"fn": function() {
+						return `Completed in `;
+					}
+				}, {
+					"name": "total-clues",
+					"fn": function() {
+						return `Total clues ${totalClues}`;
+					}
+				}, {
+					"name": "total-boxes", 
+					"fn": function(pd, ps) {
+						return `Total boxes ${totalBoxes}`;
+					}
+				}, {
+					"name": "hinted-boxes",
+					"fn": function() {
+						return `Hinted boxes ${hintedBoxes} (${Math.floor((hintedBoxes / totalBoxes) * 100.0)}%)`;
+					}
+			 	}];
+				let el;
+				for (const attr of attributes) {
+					el = dialogEl.querySelector(`div[${attr.name}]`);
+					if (el !== undefined && el !== null) {
+						let text = attr.fn();
+						if (text !== undefined && text !== null && text !== "") {
+							el.innerText = text;
+						} else {
+							el.style.display = "none";
+						}
+					}
+				}
+			}
 		}
 	};
 
@@ -519,7 +573,18 @@ function Puzzle(definition, state) {
 		popoverEl.style.setProperty("left", `calc(${left}px ${xSign} 0.5rem)`);
 		popoverEl.showPopover();
 	}
-	
+
+	function showHelp() {
+		let dialogEl = document.querySelector("#puzzle-help");
+		if (dialogEl !== undefined && dialogEl !== null) {
+			const initFn = dlgInitFunctions["puzzle-help-init"];
+			if (initFn !== undefined && initFn !== null) {
+				initFn(dialogEl);
+			}
+			dialogEl.showModal();
+		}
+	}
+
 	document.addEventListener("contextmenu", function(e) {
 		if (isCell(e.target, puzzleDefinition)) {
 			e.preventDefault();
@@ -560,7 +625,7 @@ function Puzzle(definition, state) {
 				} else if (key === ".") {
 					showRevealMenu(currentCellEl);
 				} else if (key === "?") {
-					alert("This is the help popover");
+					showHelp();
 				} else if (key === "bs") {
 					if (focusEl.innerText === "") {
 						movePreviousCell();
