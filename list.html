@@ -540,6 +540,20 @@
 			listItemEl.setAttribute("selected", "");
 		}
 
+		function computePercentComplete(guesses, answers) {
+			let total = 0;
+			let correct = 0;
+			for (let i = 0; i < guesses.length; i++) {
+				if (answers[i] !== "#") {
+					total++;
+					if (answers[i] === guesses[i].letter) {
+						correct++;
+					}
+				}
+			}
+			return Math.floor((correct / total) * 100.0);
+		}
+
 		window.addEventListener("load", async function(e) {
 
 			document.addEventListener("click", function(e) {
@@ -606,21 +620,7 @@
 				}
 				return formattedDate;
 			}
-			
-			function computePercentComplete(guesses, answers) {
-				let total = 0;
-				let correct = 0;
-				for (let i = 0; i < guesses.length; i++) {
-					if (answers[i] !== "#") {
-						total++;
-						if (answers[i] === guesses[i].letter) {
-							correct++;
-						}
-					}
-				}
-				return Math.floor((correct / total) * 100.0);
-			}
-			
+
 			let puzzleKey;
 			const puzzleKeyJson = sessionStorage.getItem("puzzleKey");
 			if (puzzleKeyJson !== null) {
