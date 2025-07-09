@@ -352,8 +352,8 @@
 			crosswordsDb = await idb.openDB("crosswords", 1, {
 				upgrade(db, oldVersion, newVersion, transaction, event) {
 					const settingsStore = db.createObjectStore("settings", { keyPath: "id" });
-					const puzzleStore = db.createObjectStore("puzzles", { keyPath: ["date", "source", "description"] });
-					const playedPuzzlesStore = db.createObjectStore("playedPuzzles", { keyPath: ["date", "source", "description"] });
+					const puzzleStore = db.createObjectStore("puzzles", { keyPath: ["date", "source", "title"] });
+					const playedPuzzlesStore = db.createObjectStore("playedPuzzles", { keyPath: ["date", "source", "title"] });
 				},
 				blocked(currentVersion, blockedVersion, event) {
 					console.log("initCrosswordsDb - blocked");
