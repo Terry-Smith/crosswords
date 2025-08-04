@@ -40,7 +40,8 @@ let defaultCrosswordOptions = {
 	skipFilledCells: false,
 	movementStyle: "stopAtEnd",
 	useNativeKeyboard: false,
-	puzzleScale: 1
+	puzzleScale: 1,
+	puzzleKeyJson: ""
 };
 
 let currentPuzzle;
@@ -63,11 +64,14 @@ window.addEventListener("load", async function(e) {
 		if (crosswordOptions.advanceToNextClueAtEndOfWord !== undefined) {
 			crosswordOptions.movementStyle = "stopAtEnd";
 			crosswordOptions.advanceToNextClueAtEndOfWord = undefined;
+			if (crosswordOptions.puzzleKeyJson === undefined || crosswordOptions.puzzleKeyJson === null) {
+				crosswordOptions.puzzleKeyJson = "";
+			}
 		}
 	}
 
-	const puzzleKeyJson = sessionStorage.getItem("puzzleKey");
-	if (puzzleKeyJson !== null) {
+	const puzzleKeyJson = crosswordOptions.puzzleKeyJson;
+	if (puzzleKeyJson !== undefined && puzzleKeyJson !== null && puzzleKeyJson.length > 0) {
 		const puzzleKey = JSON.parse(puzzleKeyJson);
 		puzzleDefinition = await getPuzzle(puzzleKey);
 	}
@@ -109,9 +113,6 @@ function Puzzle(definition, state) {
 		let puzzleGridEl = document.querySelector("div[class~='puzzle-grid']");
 		clueEl = document.querySelector("div[class='puzzle-clue']");
 		let cellIndex = ps.currentCellIndex;
-		if (cellIndex === 0) {
-			cellIndex = 1;
-		}
 		let initialFocusEl = puzzleGridEl.querySelector(`[cellindex="${cellIndex}"]`);
 		if (initialFocusEl !== undefined && initialFocusEl !== null) {
 			initialFocusEl.focus();

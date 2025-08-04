@@ -398,7 +398,8 @@
 			skipFilledCells: false,
 			movementStyle: "stopAtEnd",
 			useNativeKeyboard: false,
-			puzzleScale: 1
+			puzzleScale: 1,
+			puzzleKey: ""
 		};
 
 		let currentPuzzle;
@@ -514,6 +515,7 @@
 										console.log(`There was a problem downloading a puzzle: ${puz.message}`);
 									}
 								}
+								await displayPuzzleList();
 							}
 
 							dialogEl.close();
@@ -554,48 +556,7 @@
 			return Math.floor((correct / total) * 100.0);
 		}
 
-		window.addEventListener("load", async function(e) {
-
-			document.addEventListener("click", function(e) {
-				let targetEl;
-				let action;
-				({ targetEl: targetEl, action: action } = getTargetAction(e.target));
-				if (action !== null && action !== undefined) {
-					let m = /^show-dialog-(?<button>.*)$/.exec(action);
-					if (m !== undefined && m !== null) {
-						const dlgName = m.groups["button"];
-						let dialogEl = document.querySelector("#"+dlgName);
-						if (dialogEl !== undefined && dialogEl !== null) {
-							const initFn = dlgInitFunctions[dlgName+"-init"];
-							if (initFn !== undefined && initFn !== null) {
-								initFn(dialogEl);
-							}
-							dialogEl.showModal();
-						}
-					} else if (action === "close-dlg") {
-						let dialogEl = targetEl;
-						while (dialogEl !== undefined && dialogEl !== null) {
-							if (dialogEl.nodeName === "DIALOG") {
-								dialogEl.close();
-								break;
-							}
-							dialogEl = dialogEl.parentElement;
-						}
-					} else if (action === "playPuzzle") {
-						selectListItem(targetEl);
-						const puzzleKey = {
-							date: targetEl.dataset.date,
-							source: targetEl.dataset.source,
-							title: targetEl.dataset.title
-						}
-						sessionStorage.setItem("puzzleKey", JSON.stringify(puzzleKey));
-						window.location.href = "board.html";
-					}
-				}
-			});
-
-			await initCrosswordsDb();
-			
+		async function displayPuzzleList() {
 			let allPuzzleDefinitions = await getPuzzles();
 			
 			if (allPuzzleDefinitions.length === 0) {
@@ -622,8 +583,8 @@
 			}
 
 			let puzzleKey;
-			const puzzleKeyJson = sessionStorage.getItem("puzzleKey");
-			if (puzzleKeyJson !== null) {
+			const puzzleKeyJson = crosswordOptions?.puzzleKeyJson;
+			if (puzzleKeyJson !== null && puzzleKeyJson !== undefined && puzzleKeyJson.length > 0) {
 				puzzleKey = JSON.parse(puzzleKeyJson);
 			}
 			
@@ -658,6 +619,52 @@
 			if (el !== undefined && el !== null) {
 				el.innerHTML = html;
 			}
+		}
+		
+		window.addEventListener("load", async function(e) {
+
+			document.addEventListener("click", function(e) {
+				let targetEl;
+				let action;
+				({ targetEl: targetEl, action: action } = getTargetAction(e.target));
+				if (action !== null && action !== undefined) {
+					let m = /^show-dialog-(?<button>.*)$/.exec(action);
+					if (m !== undefined && m !== null) {
+						const dlgName = m.groups["button"];
+						let dialogEl = document.querySelector("#"+dlgName);
+						if (dialogEl !== undefined && dialogEl !== null) {
+							const initFn = dlgInitFunctions[dlgName+"-init"];
+							if (initFn !== undefined && initFn !== null) {
+								initFn(dialogEl);
+							}
+							dialogEl.showModal();
+						}
+					} else if (action === "close-dlg") {
+						let dialogEl = targetEl;
+						while (dialogEl !== undefined && dialogEl !== null) {
+							if (dialogEl.nodeName === "DIALOG") {
+								dialogEl.close();
+								break;
+							}
+							dialogEl = dialogEl.parentElement;
+						}
+					} else if (action === "playPuzzle") {
+						selectListItem(targetEl);
+						const puzzleKey = {
+							date: targetEl.dataset.date,
+							source: targetEl.dataset.source,
+							title: targetEl.dataset.title
+						}
+						crosswordOptions.puzzleKeyJson = JSON.stringify(puzzleKey);
+						saveSettings(crosswordOptions);
+						window.location.href = "board.html";
+					}
+				}
+			});
+
+			await initCrosswordsDb();
+			
+			await displayPuzzleList();
 			
 			crosswordOptions = await crosswordsDb.get("settings", "me");
 			if (crosswordOptions === undefined || crosswordOptions === null) {
@@ -667,13 +674,16 @@
 				if (crosswordOptions.advanceToNextClueAtEndOfWord !== undefined) {
 					crosswordOptions.movementStyle = "stopAtEnd";
 					crosswordOptions.advanceToNextClueAtEndOfWord = undefined;
+					if (crosswordOptions.puzzleKeyJson === undefined || crosswordOptions.puzzleKeyJson === null) {
+						crosswordOptions.puzzleKeyJson = "";
+					}
 				}
 			}
 		});
 		
 		async function updateCurrentListItem() {
-			const puzzleKeyJson = sessionStorage.getItem("puzzleKey");
-			if (puzzleKeyJson !== null) {
+			const puzzleKeyJson = crosswordOptions?.puzzleKeyJson;
+			if (puzzleKeyJson !== null && puzzleKeyJson !== undefined && puzzleKeyJson.length > 0) {
 				const puzzleKey = JSON.parse(puzzleKeyJson);
 				
 				const el = document.querySelector(`li[class="list-item"][data-date="${puzzleKey.date}"][data-source="${puzzleKey.source}"][data-title="${puzzleKey.title.replaceAll("\"", "\\\"")}"]`);
