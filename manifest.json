@@ -10,11 +10,23 @@
     "standalone",
     "window-controls-overlay"
   ],
+  "orientation": "any",
   "categories": [
     "games"
   ],
-  "theme_color": "#d11313",
+  "theme_color": "#3e72b0",
   "background_color": "#3e72b0",
+  "screenshots": [
+	{
+    "src": "screenshots/list-wide.png",
+    "form_factor": "wide",
+    "label": "List of downloaded crossword puzzles and puzzle completion amount"
+	},
+	{
+    "src": "screenshots/list-narrow.png",
+    "label": "List of downloaded crossword puzzles and puzzle completion amount"
+	}
+  ],
   "icons": [
     {
       "src": "windows11/SmallTile.scale-100.png",
