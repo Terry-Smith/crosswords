@@ -3,7 +3,8 @@
   "short_name": "Crosswords",
   "id": "epyf_crosswords",
   "description": "Play various crossword puzzles available on the internet.",
-  "start_url": "/crosswords/list.html",
+  "start_url": "./list.html",
+  "scope": "/crosswords/",
   "display": "standalone",
   "display_override": [
     "standalone",
