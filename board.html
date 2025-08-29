@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 	<meta name="viewport" content="width=device-width">
+
+	<link rel="icon" href="windows11/Square44x44Logo.altform-unplated_targetsize-16.png" type="image/png">
 	<style>
 		@view-transition {
 			navigation: auto;
@@ -13,7 +15,7 @@
 			display: none;
 		}
 	</style>
-	
+	<title>Crosswords - Crossword puzzle play board</title>
 	<link href="puzzle.css" rel="stylesheet" />
 
 	<script src="https://cdn.jsdelivr.net/npm/idb@8/build/umd.js"></script>
@@ -23,14 +25,14 @@
 <body>
 	<div class="grid-layout">
 		<div class="page-header">
-			<button class="puzzle-title" action="show-dialog-puzzle-info" tabIndex="0"></button>
-			<button class="puzzle-button" action="return-to-puzzle-list">
+			<button class="puzzle-title" aria-label="Show puzzle info" action="show-dialog-puzzle-info" tabIndex="0"></button>
+			<button class="puzzle-button" aria-label="Return to puzzle list" action="return-to-puzzle-list">
 				<svg class="" fill="currentColor" aria-hidden="true" width="1em" height="1em" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
 					<path d="M8.73 16.8a.75.75 0 0 0 1.03-1.1l-5.24-4.95h12.73a.75.75 0 0 0 0-1.5H4.52l5.24-4.96A.75.75 0 1 0 8.73 3.2L2.31 9.27a1 1 0 0 0 0 1.46l6.42 6.07Z" fill="currentColor"></path>
 				</svg>
 			</button>
 			<div class="puzzle-clue"></div>
-			<button class="puzzle-button" action="show-dialog-puzzle-settings">
+			<button class="puzzle-button" aria-label="Show puzzle settings" action="show-dialog-puzzle-settings">
 				<svg class="" fill="currentColor" aria-hidden="true" width="1em" height="1em" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 					<path d="M13.85 22.25h-3.7c-.74 0-1.36-.54-1.45-1.27l-.27-1.89c-.27-.14-.53-.29-.79-.46l-1.8.72c-.7.26-1.47-.03-1.81-.65L2.2 15.53c-.35-.66-.2-1.44.36-1.88l1.53-1.19c-.01-.15-.02-.3-.02-.46 0-.15.01-.31.02-.46l-1.52-1.19c-.59-.45-.74-1.26-.37-1.88l1.85-3.19c.34-.62 1.11-.9 1.79-.63l1.81.73c.26-.17.52-.32.78-.46l.27-1.91c.09-.7.71-1.25 1.44-1.25h3.7c.74 0 1.36.54 1.45 1.27l.27 1.89c.27.14.53.29.79.46l1.8-.72c.71-.26 1.48.03 1.82.65l1.84 3.18c.36.66.2 1.44-.36 1.88l-1.52 1.19c.01.15.02.3.02.46s-.01.31-.02.46l1.52 1.19c.56.45.72 1.23.37 1.86l-1.86 3.22c-.34.62-1.11.9-1.8.63l-1.8-.72c-.26.17-.52.32-.78.46l-.27 1.91c-.1.68-.72 1.22-1.46 1.22zm-3.23-2h2.76l.37-2.55.53-.22c.44-.18.88-.44 1.34-.78l.45-.34 2.38.96 1.38-2.4-2.03-1.58.07-.56c.03-.26.06-.51.06-.78s-.03-.53-.06-.78l-.07-.56 2.03-1.58-1.39-2.4-2.39.96-.45-.35c-.42-.32-.87-.58-1.33-.77l-.52-.22-.37-2.55h-2.76l-.37 2.55-.53.21c-.44.19-.88.44-1.34.79l-.45.33-2.38-.95-1.39 2.39 2.03 1.58-.07.56a7 7 0 0 0-.06.79c0 .26.02.53.06.78l.07.56-2.03 1.58 1.38 2.4 2.39-.96.45.35c.43.33.86.58 1.33.77l.53.22.38 2.55z"></path><circle cx="12" cy="12" r="3.5"></circle>
 				</svg>
@@ -43,7 +45,7 @@
 			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" key-action="q">q</div><div class="puzzle-keyboard-key" key-action="w">w</div><div class="puzzle-keyboard-key" key-action="e">e</div><div class="puzzle-keyboard-key" key-action="r">r</div><div class="puzzle-keyboard-key" key-action="t">t</div><div class="puzzle-keyboard-key" key-action="y">y</div><div class="puzzle-keyboard-key" key-action="u">u</div><div class="puzzle-keyboard-key" key-action="i">i</div><div class="puzzle-keyboard-key" key-action="o">o</div><div class="puzzle-keyboard-key" key-action="p">p</div></div>
 			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" key-action="a">a</div><div class="puzzle-keyboard-key" key-action="s">s</div><div class="puzzle-keyboard-key" key-action="d">d</div><div class="puzzle-keyboard-key" key-action="f">f</div><div class="puzzle-keyboard-key" key-action="g">g</div><div class="puzzle-keyboard-key" key-action="h">h</div><div class="puzzle-keyboard-key" key-action="j">j</div><div class="puzzle-keyboard-key" key-action="k">k</div><div class="puzzle-keyboard-key" key-action="l">l</div></div>
 			<div class="puzzle-keyboard-row justify-end"><div class="puzzle-keyboard-key" key-action="z">z</div><div class="puzzle-keyboard-key" key-action="x">x</div><div class="puzzle-keyboard-key" key-action="c">c</div><div class="puzzle-keyboard-key" key-action="v">v</div><div class="puzzle-keyboard-key" key-action="b">b</div><div class="puzzle-keyboard-key" key-action="n">n</div><div class="puzzle-keyboard-key" key-action="m">m</div><div class="puzzle-keyboard-key backspace-key" key-action="bs"><img src="backspace.svg"></div></div>
-			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" key-action="?">?</div><div class="puzzle-keyboard-key" key-action="_">_</div><div class="puzzle-keyboard-key" key-action=".">.</div></div>
+			<div class="puzzle-keyboard-row"><div class="puzzle-keyboard-key" aria-label="Show help" key-action="?">?</div><div class="puzzle-keyboard-key" aria-label="Space bar to toggle clue direction" key-action="_">_</div><div class="puzzle-keyboard-key" aria-label="Show reveal menu" key-action=".">.</div></div>
 		</div>
 	</div>
 
@@ -127,7 +129,7 @@
 		<p>Your progress is automatically saved on the device as you are filling in boxes.</p>
 		<h3>License</h3>
 		<p>The look, feel, and most behavior of this software is heavily borrowed from the mobile application "Shortyz Crosswords" &copy; 2009-2014 Robert Cooper under the GNU GENERAL PUBLIC LICENSE. Therefore, this 
-		software is also licensed under the <a href="https://www.gnu.org/licenses/gpl-3.0.en.html#license-text">GNU GENERAL PUBLIC LICENSE</a>
+		software is also licensed under the <a href="https://www.gnu.org/licenses/gpl-3.0.en.html#license-text" target="_blank">GNU GENERAL PUBLIC LICENSE</a>
 		<div class="dlg-footer">
 			<button class="close-btn" action="close-dlg">Close</button>
 		</div>
