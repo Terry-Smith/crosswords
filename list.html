@@ -717,25 +717,36 @@
 				}
 				return undefined;
 			}
-			
-			let startSwipeX = 0;
-			let moveSwipeX = 0;
-			let origListItemPrefix = "";
 
+			function getListItemData(itemEl) {
+				if (itemEl !== undefined && itemEl !== null) {
+					return itemEl.querySelector('[class="list-data"]');
+				}
+				return undefined;
+			}
+			
 			document.addEventListener("touchstart", function(e) {
 				startSwipeX = e.touches[0].pageX;
-				const prefixEl = getListItemPrefix(getListItem(e.target));
-				if (prefixEl !== undefined && prefixEl !== null) {
-					origListItemPrefix = prefixEl.innerHTML;
+				itemEl = getListItem(e.target);
+				if (itemEl !== undefined && itemEl !== null) {
+					itemEl.swipe = {
+						startX: e.touches[0].pageX,
+						moveX: 0,
+						origPrefix: ""
+					}
+					const prefixEl = getListItemPrefix(itemEl);
+					if (prefixEl !== undefined && prefixEl !== null) {
+						itemEl.swipe.origPrefix = prefixEl.innerHTML;
+					}
 				}
 			});
 
 			document.addEventListener("touchmove", function(e) {
-				moveSwipeX = e.touches[0].pageX - startSwipeX;
 				const itemEl = getListItem(e.target);
 				if (itemEl !== undefined && itemEl !== null) {
-					itemEl.style.translate = moveSwipeX + "px";
-					itemEl.style.backgroundColor = "rgb(255 0 0 / " + Math.min(Math.floor(Math.abs(moveSwipeX)) /3, 100) + "%)";
+					itemEl.swipe.moveX = e.touches[0].pageX - itemEl.swipe.startX;
+					const delta = Math.min(Math.floor(Math.abs(itemEl.swipe.moveX)) /3, 100);
+					itemEl.style.translate = itemEl.swipe.moveX + "px";
 					const prefixEl = getListItemPrefix(itemEl);
 					if (prefixEl !== undefined && prefixEl !== null) {
 						if (prefixEl.innerHTML !== " &#128465; ") {
@@ -744,29 +755,39 @@
 							prefixEl.style.color = "black";
 						}
 					}
+					const dataEl = getListItemData(itemEl);
+					if (dataEl !== undefined && dataEl !== null) {
+						dataEl.style.opacity = ((100 - delta) / 100);
+					}
 				}
 			});
 
 			document.addEventListener("touchend", function(e) {
 				let itemEl = getListItem(e.target);
-				if (Math.abs(moveSwipeX) > 150) {
-					if (itemEl !== undefined && itemEl !== null) {
-						alert("swiped: " + itemEl.dataset.source);
+				if (itemEl !== undefined && itemEl !== null) {
+					if (Math.abs(itemEl.swipe.moveX) > 150) {
+						if (!document.startViewTransition) {
+							itemEl.setAttribute("deleted", "deleted");
+						} else {
+							const transition = document.startViewTransition(() => itemEl.setAttribute("deleted", "deleted"));
+						}
+//alert("swiped: " + itemEl.dataset.source);
+					} else {
+						itemEl.style.removeProperty("translate");
+						if (itemEl.swipe.origPrefix !== "") {
+							const prefixEl = getListItemPrefix(itemEl);
+							if (prefixEl !== undefined && prefixEl !== null) {
+								prefixEl.innerHTML = itemEl.swipe.origPrefix;
+								prefixEl.style.removeProperty("font-size");
+								prefixEl.style.removeProperty("color");
+							}
+						}
+						const dataEl = getListItemData(itemEl);
+						if (dataEl !== undefined && dataEl !== null) {
+							dataEl.style.removeProperty("opacity");
+						}
 					}
 				}
-				itemEl.style.removeProperty("translate");
-				itemEl.style.removeProperty("background-color");
-				if (origListItemPrefix !== "") {
-					const prefixEl = getListItemPrefix(itemEl);
-					if (prefixEl !== undefined && prefixEl !== null) {
-						prefixEl.innerHTML = origListItemPrefix;
-						prefixEl.style.removeProperty("font-size");
-						prefixEl.style.removeProperty("color");
-					}
-				}
-				startSwipeX = 0;
-				moveSwipeX = 0;
-				origListItemPrefix = "";
 			});
 			
 			await initCrosswordsDb();
@@ -894,10 +915,19 @@
 		height: 2rem;
 		display: grid;
 		align-content: center;
+		view-transition-name: match-element;
+	}
+
+	::view-transition-group(*) {
+		animation-duration: 0.5s;
+	}
+
+	html::view-transition-old(*),
+	html::view-transition-new(*) {
+		height: 100%;
 	}
 
 	.list-item {
-/*		view-transition-name: puzzleTitle;*/
 		display: flex;
 		align-content: center;
 		align-items: center;
@@ -906,6 +936,13 @@
 		border-left-width: .2rem;
 		border-left-style: solid;
 		border-left-color: transparent;	
+		view-transition-name: match-element;
+	}
+
+	.list-item[deleted] {
+		padding: 0;
+		max-height: 0;
+		display: none;
 	}
 	
 	.list-item[selected] {
