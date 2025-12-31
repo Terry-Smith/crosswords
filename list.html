@@ -400,7 +400,9 @@
 			for await (const cursor of tx.store) {
 				puzzles.push(cursor.value);
 			}
-			// Sort most recent first.
+			// Sort most recent first. Would be better to do the ordering in the tx.store, but I don't find
+			// that as intuitive as I think it should be. The amount of data should be relatively small so 
+			// sort after fetched.
 			puzzles.sort((a, b) => {
 				if (a.date > b.date) {
 					return -1;
@@ -687,6 +689,86 @@
 				}
 			});
 
+			function getListItem(el) {
+				while(el !== undefined && el !== null) {
+					if (el.classList.contains("list-item")) {
+						break;
+					}
+					el = el.parentElement;
+				}
+				return el;
+			}
+			
+			document.addEventListener("contextmenu", function(e) {
+				let itemEl = getListItem(e.target);
+				if (itemEl !== undefined && itemEl !== null) {
+					e.preventDefault();
+					e.cancelBubble = true;
+					e.stopPropagation();
+					//showRevealMenu(e.target);
+					alert("context menu: " + itemEl.dataset.source);
+					return;
+				}
+			});
+			
+			function getListItemPrefix(itemEl) {
+				if (itemEl !== undefined && itemEl !== null) {
+					return itemEl.querySelector('[class="list-prefix"]');
+				}
+				return undefined;
+			}
+			
+			let startSwipeX = 0;
+			let moveSwipeX = 0;
+			let origListItemPrefix = "";
+
+			document.addEventListener("touchstart", function(e) {
+				startSwipeX = e.touches[0].pageX;
+				const prefixEl = getListItemPrefix(getListItem(e.target));
+				if (prefixEl !== undefined && prefixEl !== null) {
+					origListItemPrefix = prefixEl.innerHTML;
+				}
+			});
+
+			document.addEventListener("touchmove", function(e) {
+				moveSwipeX = e.touches[0].pageX - startSwipeX;
+				const itemEl = getListItem(e.target);
+				if (itemEl !== undefined && itemEl !== null) {
+					itemEl.style.translate = moveSwipeX + "px";
+					itemEl.style.backgroundColor = "rgb(255 0 0 / " + Math.min(Math.floor(Math.abs(moveSwipeX)) /3, 100) + "%)";
+					const prefixEl = getListItemPrefix(itemEl);
+					if (prefixEl !== undefined && prefixEl !== null) {
+						if (prefixEl.innerHTML !== " &#128465; ") {
+							prefixEl.innerHTML = " &#128465; ";
+							prefixEl.style.fontSize = "2rem";
+							prefixEl.style.color = "black";
+						}
+					}
+				}
+			});
+
+			document.addEventListener("touchend", function(e) {
+				let itemEl = getListItem(e.target);
+				if (Math.abs(moveSwipeX) > 150) {
+					if (itemEl !== undefined && itemEl !== null) {
+						alert("swiped: " + itemEl.dataset.source);
+					}
+				}
+				itemEl.style.removeProperty("translate");
+				itemEl.style.removeProperty("background-color");
+				if (origListItemPrefix !== "") {
+					const prefixEl = getListItemPrefix(itemEl);
+					if (prefixEl !== undefined && prefixEl !== null) {
+						prefixEl.innerHTML = origListItemPrefix;
+						prefixEl.style.removeProperty("font-size");
+						prefixEl.style.removeProperty("color");
+					}
+				}
+				startSwipeX = 0;
+				moveSwipeX = 0;
+				origListItemPrefix = "";
+			});
+			
 			await initCrosswordsDb();
 			
 			await displayPuzzleList();
