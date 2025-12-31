@@ -705,9 +705,7 @@
 					e.preventDefault();
 					e.cancelBubble = true;
 					e.stopPropagation();
-					//showRevealMenu(e.target);
-					alert("context menu: " + itemEl.dataset.source);
-					return;
+					showContextMenu(itemEl, "listItemContextMenu", {x:e.pageX, y:e.pageY});
 				}
 			});
 			
@@ -762,16 +760,73 @@
 				}
 			});
 
-			document.addEventListener("touchend", function(e) {
+			async function removeGroupHeaderIfNeeded(itemEl) {
+				// Find the group header and then see if any items still exist in the group by looking
+				// for the next group header or the end. If none, then "delete" the group header too.
+				let groupHeaderEl = null;
+				let prevEl = itemEl.previousElementSibling;
+				while(prevEl !== null) {
+					if (prevEl.classList.contains("group-header")) {
+						groupHeaderEl = prevEl;
+						break;
+					}
+					prevEl = prevEl.previousElementSibling;
+				}
+				if (groupHeaderEl !== null) {
+					let nextEl = groupHeaderEl.nextElementSibling;
+					while(nextEl != null) {
+						if (nextEl.hasAttribute("deleted")) {
+							nextEl = nextEl.nextElementSibling;
+							continue;
+						}
+						if (nextEl.classList.contains("group-header")) {
+							break;
+						}
+						groupHeaderEl = null;
+						break;
+					}
+					if (groupHeaderEl !== null) {
+						if (!document.startViewTransition) {
+							groupHeaderEl.setAttribute("deleted", "deleted");
+							console.log("Set groupheader to deleted");
+						} else {
+							const transition = document.startViewTransition(() => groupHeaderEl.setAttribute("deleted", "deleted"));
+							try {
+								await transition.finished;
+							} finally {
+								console.log("Finished waiting for groupheader transition");
+							}
+						}
+						console.log("Done with groupheader");
+					}
+				}
+			}
+			
+			document.addEventListener("touchend", async function(e) {
 				let itemEl = getListItem(e.target);
 				if (itemEl !== undefined && itemEl !== null) {
 					if (Math.abs(itemEl.swipe.moveX) > 150) {
 						if (!document.startViewTransition) {
 							itemEl.setAttribute("deleted", "deleted");
+							await removeGroupHeaderIfNeeded(itemEl);
+console.log("Returned from groupheader check");
 						} else {
 							const transition = document.startViewTransition(() => itemEl.setAttribute("deleted", "deleted"));
+							try {
+								await transition.finished;
+							} finally {
+								await removeGroupHeaderIfNeeded(itemEl);
+console.log("Returned from groupheader check after transition");
+							}
 						}
-//alert("swiped: " + itemEl.dataset.source);
+console.log("Done with touchend");
+						const undoBannerEl = document.getElementById("undoItemBanner");
+						if (undoBannerEl !== undefined && undoBannerEl !== null) {
+							undoBannerEl.classList.add("undo-banner-show");
+							setTimeout(async function doDelete() {
+								undoBannerEl.classList.remove("undo-banner-show");
+							}, 10 * 1000);
+						}
 					} else {
 						itemEl.style.removeProperty("translate");
 						if (itemEl.swipe.origPrefix !== "") {
@@ -841,6 +896,117 @@
 		
 		window.addEventListener("pageshow", updateCurrentListItem);
 		
+/*		document.addEventListener("keydown", function(e) {
+			let focusEl = document.querySelector("[class~='puzzle-cell-focus']");
+			if (focusEl !== undefined && focusEl !== null) {
+				let doDefault = true;
+				const revealPopoverStyle = window.getComputedStyle(popoverEl);
+				if (revealPopoverStyle.display === "none") {
+					if (/^[a-z]$/i.test(e.key)) {
+						setCell(focusEl, e.key.toUpperCase());
+						moveNextCell();
+					} else if (e.key === " ") {
+						let targetEl;
+						let action;
+						({ targetEl: targetEl, action: action } = getTargetAction(e.target));
+						if (action === undefined || action == null) {
+							toggleDirection();
+							updateCurrentClue();
+							doDefault = false;
+						}
+					} else if (e.keyCode === 8) {
+						if (focusEl.innerText === "") {
+							movePreviousCell();
+							focusEl = document.querySelector("[class~='puzzle-cell-focus']");
+							if (focusEl === undefined || focusEl === null) {
+								return;
+							}
+						}
+						setCell(focusEl, "");
+					} else if (e.keyCode === 40) { // down
+						moveDown({hopBlocks: true});
+						doDefault = false;
+					} else if (e.keyCode === 38) { // up
+						moveUp({hopBlocks: true});
+						doDefault = false;
+					} else if (e.keyCode === 37) { // left
+						moveLeft({hopBlocks: true});
+						doDefault = false;
+					} else if (e.keyCode === 39) { // right
+						moveRight({hopBlocks: true});
+						doDefault = false;
+					} else if (e.key === ".") {
+						showRevealMenu(currentCellEl);
+						doDefault = false;
+					} else if (e.key === "?") {
+						showHelp();
+						doDefault = false;
+					}
+				} else {
+					// In the reveal menu
+					if (e.keyCode === 40) { // down
+						let focusEl = popoverEl.querySelector("li:focus");
+						if (focusEl !== undefined && focusEl !== null && focusEl.nextElementSibling === null) {
+							focusEl = popoverEl.querySelector("li");
+						} else {
+							focusEl = focusEl.nextElementSibling;
+						}
+						focusEl.focus();
+						doDefault = false;
+					} else if (e.keyCode === 38) { // up
+						let focusEl = popoverEl.querySelector("li:focus");
+						if (focusEl !== undefined && focusEl !== null && focusEl.previousElementSibling === null) {
+							focusEl = popoverEl.querySelector("li:last-child");
+						} else {
+							focusEl = focusEl.previousElementSibling;
+						}
+						focusEl.focus();
+						doDefault = false;
+					} else if (e.key === " ") {
+						popoverEl.hidePopover();
+						reveal(getTargetAction(e.target));
+					}
+				}
+
+				if (!doDefault) {
+					e.preventDefault();
+					e.cancelBubble = true;
+					e.stopPropagation();
+				}
+			}
+		});*/
+
+		function showContextMenu(el, menuId, pagePoint) {
+			const popoverEl = document.getElementById(menuId);
+			const viewPortRect = document.documentElement.getBoundingClientRect();
+			const cellRect = el.getBoundingClientRect()
+			popoverEl.classList.add("for-sizing");
+			const popoverRect = popoverEl.getBoundingClientRect();
+
+			let top = pagePoint.y;
+			let left = pagePoint.x;
+			let xSign = "-";
+			let ySign = "-";
+			if (left < 0) {
+				left = 0;
+				xSign = "+";
+			} else if (left + popoverRect.width > viewPortRect.width) {
+				left = viewPortRect.width - popoverRect.width;
+				xSign = "-";
+			}
+			if (top < 0) {
+				top = 0;
+				xSign = "+";
+			} else if (top + popoverRect.height > viewPortRect.height) {
+				top = viewPortRect.height - popoverRect.height;
+				ySign = "-";
+			}
+			popoverEl.classList.remove("for-sizing");
+			popoverEl.style.setProperty("top", `calc(${top}px ${ySign} 0.5rem)`);
+			popoverEl.style.setProperty("left", `calc(${left}px ${xSign} 0.5rem)`);
+			popoverEl.showPopover();
+		}
+		
 		</script>
 
 	<style>
@@ -907,6 +1073,13 @@
 		padding: 0;
 		list-style: none;
 	}
+
+	.for-sizing {
+		visibility: hidden;
+		display: block;
+		top: 0;
+		left: 0;
+	}
 	
 	.group-header {
 		padding: 0.5rem;
@@ -918,6 +1091,12 @@
 		view-transition-name: match-element;
 	}
 
+	.group-header[deleted] {
+		padding: 0;
+		max-height: 0;
+		display: none;
+	}
+	
 	::view-transition-group(*) {
 		animation-duration: 0.5s;
 	}
@@ -1102,11 +1281,56 @@
 		justify-content: center;
 		align-items: center;
 	}
+
 	.button-svg-and-text svg {
 		height: 1.5rem;
 		width: 1.5rem;
 		margin-right: .25rem;
 	}
+	
+	.context-menu-container {
+		margin: 0;
+		position: absolute;
+		border-style: none;
+		box-shadow: 5px 5px 12px rgba(0, 0, 0, 0.6);
+	}
+
+	.context-menu {
+		margin: 0;
+		padding: 0;
+		font-size: 1.5rem;
+	}
+
+	.undo-banner {
+		display: flex;
+		/*visibility: hidden;*/
+		position: absolute;
+		background-color: #373737;
+		color: white;
+		width: calc(100% - 2.5rem);
+		margin-left: .5rem;
+		margin-right: .5rem;
+		padding: .75rem;
+		align-items: center;
+		justify-content: space-between;
+		border-radius: .25rem;
+		transform: translateY(4rem);
+		transition: transform .5s;
+	}
+	
+	.undo-banner button {
+		font-weight: bold;
+		background-color: #373737;
+		color: white;
+		border: none;
+		font-size: 1rem;
+	}
+	
+	.undo-banner-show {
+		visibility: visible;
+		transform: translateY(-4rem);
+	}
+
 	</style>
 </head>
 <body>
@@ -1137,7 +1361,7 @@
 			<div class="inline-block download-hint hidden">
 				<div class="box-arrow box-arrow-top"></div>
 				<div class="inline-block">
-					<div style="display:flex; align-items:center">Click on the the download icon to start solving crossword puzzles.</div>
+					<div style="display:flex; align-items:center">Click on the download icon to start solving crossword puzzles.</div>
 				</div>
 			</div>
 		</div>
@@ -1202,6 +1426,16 @@
 			<button class="close-btn" action="close-dlg">Close</button>
 		</div>
 	</dialog>
+	
+	<div id="listItemContextMenu" class="context-menu-container" popover>
+      <ul class="context-menu">
+        <li action="delete-item" tabindex="0">&#128465; Delete</li>
+      </ul>
+    </div>
+
+	<div id="undoItemBanner" class="undo-banner" data-template=" ${prefix}deleted puzzle${suffix}" >
+		<span>1 deleted puzzle.</span><button>Undo</button>
+	</div>
 </body>
 
 </html>
