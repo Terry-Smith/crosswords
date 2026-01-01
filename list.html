@@ -685,6 +685,8 @@
 						crosswordOptions.puzzleKeyJson = JSON.stringify(puzzleKey);
 						saveSettings(crosswordOptions);
 						window.location.href = "board.html";
+					} else if (action === "undo-delete") {
+						alert("undo delete");
 					}
 				}
 			});
@@ -797,32 +799,60 @@
 						}
 					}
 				}
+				return groupHeaderEl;
 			}
+			
+			let deleteTimerId = 0;
+			let deletedEls = [];
+			let deletedCount = 0;
 			
 			document.addEventListener("touchend", async function(e) {
 				let itemEl = getListItem(e.target);
 				if (itemEl !== undefined && itemEl !== null) {
+					let headerEl = null;
 					if (Math.abs(itemEl.swipe.moveX) > 150) {
 						if (!document.startViewTransition) {
 							itemEl.setAttribute("deleted", "deleted");
-							await removeGroupHeaderIfNeeded(itemEl);
+							headerEl = await removeGroupHeaderIfNeeded(itemEl);
 						} else {
 							const transition = document.startViewTransition(() => itemEl.setAttribute("deleted", "deleted"));
 							try {
 								await transition.finished;
 							} finally {
-								await removeGroupHeaderIfNeeded(itemEl);
+								headerEl = await removeGroupHeaderIfNeeded(itemEl);
 							}
 						}
+						deletedEls.push(itemEl);
+						deletedCount++;
+						if (headerEl !== null && headerEl !== undefined) {
+							deletedEls.push(headerEl);
+							// Not including in count since it is not a puzzle item.
+						}
+
 						const undoBannerEl = document.getElementById("undoItemBanner");
 						if (undoBannerEl !== undefined && undoBannerEl !== null) {
-							undoBannerEl.classList.add("undo-banner-visible", "undo-banner-show");
-							setTimeout(async function doDelete() {
+							const label = `${deletedCount} deleted puzzle${deletedCount > 1 ? "s" : ""}.`;
+							const spanEl = undoBannerEl.querySelector("span");
+							if (spanEl !== undefined && spanEl !== null) {
+								spanEl.innerText = label;
+							}
+							if (!undoBannerEl.classList.contains("undo-banner-visible")) {
+								undoBannerEl.classList.add("undo-banner-visible", "undo-banner-show");
+							}
+							if (deleteTimerId != 0) {
+								clearTimeout(deleteTimerId);
+								deleteTimerId = 0;
+							}
+							deleteTimerId = setTimeout(async function doDelete() {
+								deleteTimerId = 0;
 								let transitionEnd = function transitionEnd(e) {
 									undoBannerEl.classList.remove("undo-banner-visible");
 								};
 								undoBannerEl.addEventListener("transitionend", transitionEnd, {once: true});
 								undoBannerEl.classList.remove("undo-banner-show");
+								
+								deletedEls.length = 0;
+								deletedCount = 0;
 							}, 10 * 1000);
 						}
 					} else {
@@ -1434,8 +1464,8 @@
       </ul>
     </div>
 
-	<div id="undoItemBanner" class="undo-banner" data-template=" ${prefix}deleted puzzle${suffix}" >
-		<span>1 deleted puzzle.</span><button>Undo</button>
+	<div id="undoItemBanner" class="undo-banner">
+		<span>1 deleted puzzle.</span><button action="undo-delete">Undo</button>
 	</div>
 </body>
 
