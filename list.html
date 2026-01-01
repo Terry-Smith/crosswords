@@ -788,16 +788,13 @@
 					if (groupHeaderEl !== null) {
 						if (!document.startViewTransition) {
 							groupHeaderEl.setAttribute("deleted", "deleted");
-							console.log("Set groupheader to deleted");
 						} else {
 							const transition = document.startViewTransition(() => groupHeaderEl.setAttribute("deleted", "deleted"));
 							try {
 								await transition.finished;
 							} finally {
-								console.log("Finished waiting for groupheader transition");
 							}
 						}
-						console.log("Done with groupheader");
 					}
 				}
 			}
@@ -809,21 +806,22 @@
 						if (!document.startViewTransition) {
 							itemEl.setAttribute("deleted", "deleted");
 							await removeGroupHeaderIfNeeded(itemEl);
-console.log("Returned from groupheader check");
 						} else {
 							const transition = document.startViewTransition(() => itemEl.setAttribute("deleted", "deleted"));
 							try {
 								await transition.finished;
 							} finally {
 								await removeGroupHeaderIfNeeded(itemEl);
-console.log("Returned from groupheader check after transition");
 							}
 						}
-console.log("Done with touchend");
 						const undoBannerEl = document.getElementById("undoItemBanner");
 						if (undoBannerEl !== undefined && undoBannerEl !== null) {
-							undoBannerEl.classList.add("undo-banner-show");
+							undoBannerEl.classList.add("undo-banner-visible", "undo-banner-show");
 							setTimeout(async function doDelete() {
+								let transitionEnd = function transitionEnd(e) {
+									undoBannerEl.classList.remove("undo-banner-visible");
+								};
+								undoBannerEl.addEventListener("transitionend", transitionEnd, {once: true});
 								undoBannerEl.classList.remove("undo-banner-show");
 							}, 10 * 1000);
 						}
@@ -847,8 +845,6 @@ console.log("Done with touchend");
 			
 			await initCrosswordsDb();
 			
-			await displayPuzzleList();
-			
 			crosswordOptions = await crosswordsDb.get("settings", "me");
 			if (crosswordOptions === undefined || crosswordOptions === null) {
 				crosswordOptions = structuredClone(defaultCrosswordOptions);
@@ -857,11 +853,13 @@ console.log("Done with touchend");
 				if (crosswordOptions.advanceToNextClueAtEndOfWord !== undefined) {
 					crosswordOptions.movementStyle = "stopAtEnd";
 					crosswordOptions.advanceToNextClueAtEndOfWord = undefined;
-					if (crosswordOptions.puzzleKeyJson === undefined || crosswordOptions.puzzleKeyJson === null) {
-						crosswordOptions.puzzleKeyJson = "";
-					}
+				}
+				if (crosswordOptions.puzzleKeyJson === undefined || crosswordOptions.puzzleKeyJson === null) {
+					crosswordOptions.puzzleKeyJson = "";
 				}
 			}
+			
+			await displayPuzzleList();
 		});
 		
 		async function updateCurrentListItem() {
@@ -1118,18 +1116,18 @@ console.log("Done with touchend");
 		view-transition-name: match-element;
 	}
 
-	.list-item[deleted] {
-		padding: 0;
-		max-height: 0;
-		display: none;
-	}
-	
 	.list-item[selected] {
 		border-left-color: green;
 	}
 	
 	.list-item:hover {
 		background-color: #f3f3f3;
+	}
+	
+	.list-item[deleted] {
+		padding: 0;
+		max-height: 0;
+		display: none;
 	}
 	
 	.list-prefix {
@@ -1303,7 +1301,7 @@ console.log("Done with touchend");
 
 	.undo-banner {
 		display: flex;
-		/*visibility: hidden;*/
+		visibility: hidden;
 		position: absolute;
 		background-color: #373737;
 		color: white;
@@ -1326,8 +1324,11 @@ console.log("Done with touchend");
 		font-size: 1rem;
 	}
 	
-	.undo-banner-show {
+	.undo-banner-visible {
 		visibility: visible;
+	}
+
+	.undo-banner-show {
 		transform: translateY(-4rem);
 	}
 
