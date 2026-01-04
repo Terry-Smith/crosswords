@@ -393,6 +393,10 @@
 		async function getState(pd) {
 			return await crosswordsDb.get("playedPuzzles", [pd.date, pd.source, pd.title]);
 		}
+
+		async function deleteState(pd) {
+			return await crosswordsDb.delete("playedPuzzles", [pd.date, pd.source, pd.title]);
+		}
 		
 		async function getPuzzles() {
 			const puzzles = [];
@@ -417,6 +421,10 @@
 		
 		async function getPuzzle(puzzleKey) {
 			return await crosswordsDb.get("puzzles", [puzzleKey.date, puzzleKey.source, puzzleKey.title]);
+		}
+
+		async function deletePuzzle(puzzleKey) {
+			return await crosswordsDb.delete("puzzles", [puzzleKey.date, puzzleKey.source, puzzleKey.title]);
 		}
 
 		let defaultCrosswordOptions = {
@@ -825,6 +833,19 @@
 				// Called when the timer has elapsed, so clear out timer id.
 				deleteTimerId = 0;
 				
+				for (const el of deletedEls) {
+					// A group header item can be in the list so no db item to delete.
+					if (el.dataset.date !== undefined && el.dataset.date !== null) {
+						const puzzleKey = {
+							date: el.dataset.date,
+							source: el.dataset.source,
+							title: el.dataset.title
+						};				
+						deletePuzzle(puzzleKey);
+						deleteState(puzzleKey);
+					}
+					el.remove();
+				}
 				
 				deletedEls.length = 0;
 				deletedCount = 0;
