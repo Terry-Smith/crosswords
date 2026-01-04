@@ -685,8 +685,23 @@
 						crosswordOptions.puzzleKeyJson = JSON.stringify(puzzleKey);
 						saveSettings(crosswordOptions);
 						window.location.href = "board.html";
-					} else if (action === "undo-delete") {
-						alert("undo delete");
+					} else if (action === "undo-delete-list-item") {
+						undoLastDelete();
+					} else if (action === "delete-list-item") {
+						let itemEl = null;
+						while (targetEl !== undefined && targetEl !== null) {
+							if (targetEl.itemEl !== undefined && targetEl.itemEl !== null) {
+								itemEl = targetEl.itemEl;
+								break;
+							}
+							targetEl = targetEl.parentElement;
+						}
+						if (targetEl !== undefined && targetEl !== null) {
+							targetEl.hidePopover();
+						}
+						if (itemEl !== undefined && itemEl !== null) {
+							deleteListItem(itemEl);
+						}
 					}
 				}
 			});
@@ -806,69 +821,136 @@
 			let deletedEls = [];
 			let deletedCount = 0;
 			
+			async function doDelete() {
+				// Called when the timer has elapsed, so clear out timer id.
+				deleteTimerId = 0;
+				
+				
+				deletedEls.length = 0;
+				deletedCount = 0;
+				
+				updateUndoBanner(deletedCount);
+			}
+
+			function updateUndoBanner(count) {
+				const undoBannerEl = document.getElementById("undoItemBanner");
+				if (undoBannerEl !== undefined && undoBannerEl !== null) {
+					if (count > 0) {
+						const label = `${count} deleted puzzle${count > 1 ? "s" : ""}.`;
+						const spanEl = undoBannerEl.querySelector("span");
+						if (spanEl !== undefined && spanEl !== null) {
+							spanEl.innerText = label;
+						}
+						if (!undoBannerEl.classList.contains("undo-banner-visible")) {
+							undoBannerEl.classList.add("undo-banner-visible", "undo-banner-show");
+						}
+					} else {
+						let transitionEnd = function transitionEnd(e) {
+							undoBannerEl.classList.remove("undo-banner-visible");
+						};
+						undoBannerEl.addEventListener("transitionend", transitionEnd, {once: true});
+						undoBannerEl.classList.remove("undo-banner-show");
+					}
+				}
+			}
+			
+			function restoreListItem(itemEl) {
+				itemEl.style.removeProperty("translate");
+				if (itemEl.swipe !== undefined && itemEl.swipe !== null && itemEl.swipe.origPrefix !== "") {
+					const prefixEl = getListItemPrefix(itemEl);
+					if (prefixEl !== undefined && prefixEl !== null) {
+						prefixEl.innerHTML = itemEl.swipe.origPrefix;
+						prefixEl.style.removeProperty("font-size");
+						prefixEl.style.removeProperty("color");
+					}
+				}
+				const dataEl = getListItemData(itemEl);
+				if (dataEl !== undefined && dataEl !== null) {
+					dataEl.style.removeProperty("opacity");
+				}
+			}
+			
+			async function undoLastDelete() {
+				if (deletedCount < 1) {
+					return;
+				}
+				if (deleteTimerId !== 0) {
+					clearTimeout(deleteTimerId);
+					deleteTimerId = 0;
+				}
+				
+				// List may have a group header, so undelete until a puzzle item (not a group-header) is restored.
+				let itemEl;
+				do {
+					itemEl = deletedEls.pop();
+					if (!document.startViewTransition) {
+						itemEl.removeAttribute("deleted");
+						restoreListItem(itemEl);
+					} else {
+						const transition = document.startViewTransition(() => {
+							itemEl.removeAttribute("deleted"); 
+							restoreListItem(itemEl);
+						});
+						try {
+							await transition.finished;
+						} finally {
+						}
+					}
+				} while(itemEl.classList.contains("group-header"));
+				
+				deletedCount--;
+				updateUndoBanner(deletedCount);
+
+				if (deletedCount > 0) {
+					deleteTimerId = setTimeout(doDelete, 10 * 1000);
+				}
+			}
+			
+			async function deleteListItem(itemEl) {
+				let headerEl = null;
+				if (!document.startViewTransition) {
+					itemEl.setAttribute("deleted", "deleted");
+					headerEl = await removeGroupHeaderIfNeeded(itemEl);
+				} else {
+					const transition = document.startViewTransition(() => itemEl.setAttribute("deleted", "deleted"));
+					try {
+						await transition.finished;
+					} finally {
+						headerEl = await removeGroupHeaderIfNeeded(itemEl);
+					}
+				}
+				deletedEls.push(itemEl);
+				deletedCount++;
+				if (headerEl !== null && headerEl !== undefined) {
+					deletedEls.push(headerEl);
+					// Not including in count since it is not a puzzle item.
+				}
+
+				updateUndoBanner(deletedCount);
+				if (deleteTimerId != 0) {
+					clearTimeout(deleteTimerId);
+					deleteTimerId = 0;
+				}
+				deleteTimerId = setTimeout(doDelete, 10 * 1000);
+			}
+			
 			document.addEventListener("touchend", async function(e) {
 				let itemEl = getListItem(e.target);
 				if (itemEl !== undefined && itemEl !== null) {
-					let headerEl = null;
 					if (Math.abs(itemEl.swipe.moveX) > 150) {
-						if (!document.startViewTransition) {
-							itemEl.setAttribute("deleted", "deleted");
-							headerEl = await removeGroupHeaderIfNeeded(itemEl);
-						} else {
-							const transition = document.startViewTransition(() => itemEl.setAttribute("deleted", "deleted"));
-							try {
-								await transition.finished;
-							} finally {
-								headerEl = await removeGroupHeaderIfNeeded(itemEl);
-							}
-						}
-						deletedEls.push(itemEl);
-						deletedCount++;
-						if (headerEl !== null && headerEl !== undefined) {
-							deletedEls.push(headerEl);
-							// Not including in count since it is not a puzzle item.
-						}
-
-						const undoBannerEl = document.getElementById("undoItemBanner");
-						if (undoBannerEl !== undefined && undoBannerEl !== null) {
-							const label = `${deletedCount} deleted puzzle${deletedCount > 1 ? "s" : ""}.`;
-							const spanEl = undoBannerEl.querySelector("span");
-							if (spanEl !== undefined && spanEl !== null) {
-								spanEl.innerText = label;
-							}
-							if (!undoBannerEl.classList.contains("undo-banner-visible")) {
-								undoBannerEl.classList.add("undo-banner-visible", "undo-banner-show");
-							}
-							if (deleteTimerId != 0) {
-								clearTimeout(deleteTimerId);
-								deleteTimerId = 0;
-							}
-							deleteTimerId = setTimeout(async function doDelete() {
-								deleteTimerId = 0;
-								let transitionEnd = function transitionEnd(e) {
-									undoBannerEl.classList.remove("undo-banner-visible");
-								};
-								undoBannerEl.addEventListener("transitionend", transitionEnd, {once: true});
-								undoBannerEl.classList.remove("undo-banner-show");
-								
-								deletedEls.length = 0;
-								deletedCount = 0;
-							}, 10 * 1000);
-						}
+						deleteListItem(itemEl);
 					} else {
-						itemEl.style.removeProperty("translate");
-						if (itemEl.swipe.origPrefix !== "") {
-							const prefixEl = getListItemPrefix(itemEl);
-							if (prefixEl !== undefined && prefixEl !== null) {
-								prefixEl.innerHTML = itemEl.swipe.origPrefix;
-								prefixEl.style.removeProperty("font-size");
-								prefixEl.style.removeProperty("color");
-							}
-						}
-						const dataEl = getListItemData(itemEl);
-						if (dataEl !== undefined && dataEl !== null) {
-							dataEl.style.removeProperty("opacity");
-						}
+						restoreListItem(itemEl);
+					}
+				}
+			});
+
+			const popoverEl = document.querySelector("#listItemContextMenu");
+			popoverEl.addEventListener("toggle", function(e) {
+				if (e.newState === 'open') {
+					const firstItem = popoverEl.querySelector("li");
+					if (firstItem !== undefined && firstItem !== null) {
+						firstItem.focus();
 					}
 				}
 			});
@@ -1029,6 +1111,7 @@
 				top = viewPortRect.height - popoverRect.height;
 				ySign = "-";
 			}
+			popoverEl.itemEl = el;
 			popoverEl.classList.remove("for-sizing");
 			popoverEl.style.setProperty("top", `calc(${top}px ${ySign} 0.5rem)`);
 			popoverEl.style.setProperty("left", `calc(${left}px ${xSign} 0.5rem)`);
@@ -1323,10 +1406,36 @@
 		box-shadow: 5px 5px 12px rgba(0, 0, 0, 0.6);
 	}
 
-	.context-menu {
+	.popovermenu {
 		margin: 0;
 		padding: 0;
-		font-size: 1.5rem;
+		font-size: .95rem;
+	}
+
+	@media (min-resolution: 150dpi) {
+		.popovermenu {
+			font-size: 1.5rem;
+		}
+	}
+
+	.popovermenu > li {
+		padding: .5rem;
+		list-style: none;
+	}
+
+	@media (min-resolution: 150dpi) {
+		.popovermenu > li {
+			padding-top: .75rem;
+			padding-bottom: .75rem;
+		}
+	}
+
+	.popovermenu > li:active {
+		background-color: lightgray;
+	}
+
+	.popovermenu > li:hover {
+		background-color: lightgray;
 	}
 
 	.undo-banner {
@@ -1459,13 +1568,13 @@
 	</dialog>
 	
 	<div id="listItemContextMenu" class="context-menu-container" popover>
-      <ul class="context-menu">
-        <li action="delete-item" tabindex="0">&#128465; Delete</li>
+      <ul class="popovermenu">
+        <li action="delete-list-item" tabindex="0">&#128465; Delete</li>
       </ul>
     </div>
 
 	<div id="undoItemBanner" class="undo-banner">
-		<span>1 deleted puzzle.</span><button action="undo-delete">Undo</button>
+		<span></span><button action="undo-delete-list-item">Undo</button>
 	</div>
 </body>
 
