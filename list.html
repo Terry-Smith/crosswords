@@ -539,7 +539,7 @@
 					const downloadBtnEl = dialogEl.querySelector("[action='download-puzzles']");
 					if (downloadBtnEl !== undefined && downloadBtnEl !== null) {
 						downloadBtnEl.addEventListener("click", async function(e) {
-							const response = await fetch(`https://bright-rat-90.deno.dev/?date=${dateEl.value}`);
+							const response = await fetch(`https://crossword-fetch.terry-smith.deno.net/?date=${dateEl.value}`);
 							if (response.ok) {
 								const jsonData = await response.json();
 								
