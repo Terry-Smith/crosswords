@@ -179,6 +179,8 @@ function Puzzle(definition, state) {
 			}
 		}
 		
+		updateState();
+
 		if (complete) {
 			if (options !== undefined && options !== null) {
 				options.puzzleComplete = true;
@@ -194,8 +196,6 @@ function Puzzle(definition, state) {
 					dialogEl.showModal();
 				}
 			}, 0);
-		} else {
-			updateState();
 		}
 	}
 	
