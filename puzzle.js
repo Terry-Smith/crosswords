@@ -115,6 +115,12 @@ function Puzzle(definition, state) {
 		let cellIndex = ps.currentCellIndex;
 		let initialFocusEl = puzzleGridEl.querySelector(`[cellindex="${cellIndex}"]`);
 		if (initialFocusEl !== undefined && initialFocusEl !== null) {
+			// One or more of the first cells could be blocks so a default of 0
+			// might not be a legitimate position. Look for the "cluenumber=1" in this case
+			// This will (should) only happen when a puzzle is loaded the first time.
+			if (initialFocusEl.classList.contains("puzzle-cell-block")) {
+				initialFocusEl = puzzleGridEl.querySelector(`[cluenumber="1"]`);
+			}
 			initialFocusEl.focus();
 		}
 	}
